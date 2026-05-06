@@ -79,6 +79,7 @@ create table if not exists public.company_users (
 create index if not exists company_users_fullname_trgm_idx
   on public.company_users using gin (full_name gin_trgm_ops);
 
+drop trigger if exists set_updated_at on public.company_users;
 create trigger set_updated_at before update on public.company_users
   for each row execute procedure public.set_updated_at();
 
@@ -101,6 +102,7 @@ create table if not exists public.visitors (
 create index if not exists visitors_cpf_idx on public.visitors (cpf);
 create index if not exists visitors_rg_idx  on public.visitors (rg);
 
+drop trigger if exists set_updated_at on public.visitors;
 create trigger set_updated_at before update on public.visitors
   for each row execute procedure public.set_updated_at();
 
@@ -149,6 +151,7 @@ create index if not exists visits_status_idx        on public.visits (status);
 create index if not exists visits_checked_in_at_idx on public.visits (checked_in_at desc);
 create index if not exists visits_visitor_id_idx    on public.visits (visitor_id);
 
+drop trigger if exists set_updated_at on public.visits;
 create trigger set_updated_at before update on public.visits
   for each row execute procedure public.set_updated_at();
 
