@@ -2,15 +2,11 @@ import { z } from 'zod'
 
 export const visitFormSchema = z.object({
   visitor_name: z.string().min(3, 'Nome deve ter ao menos 3 caracteres'),
-  cpf: z.string().optional(),
-  rg: z.string().optional(),
-  phone: z.string().optional(),
+  documento: z.string().optional(),
   visitor_company: z.string().optional(),
   company_user_id: z.string().min(1, 'Selecione quem será visitado'),
   purpose: z.string().min(3, 'Informe o motivo da visita'),
-  visitor_type: z.enum(['employee', 'supplier', 'contractor', 'other']),
   vehicle_plate: z.string().optional(),
-  notes: z.string().optional(),
 })
 
 export type VisitFormValues = z.infer<typeof visitFormSchema>

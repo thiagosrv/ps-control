@@ -42,15 +42,11 @@ export function useVisits() {
     let visitorId = existingVisitorId
 
     if (!visitorId) {
-      const cpfClean = values.cpf ? unformatCPF(values.cpf) : null
-
       const { data: visitor, error: visitorError } = await supabase
         .from('visitors')
         .insert({
           full_name: values.visitor_name,
-          cpf: cpfClean || null,
-          rg: values.rg || null,
-          phone: values.phone || null,
+          cpf: values.documento || null,
           company: values.visitor_company || null,
         })
         .select()
@@ -58,8 +54,8 @@ export function useVisits() {
 
       if (visitorError) return { error: visitorError as Error }
       visitorId = (visitor as Visitor).id
-    } else if (values.visitor_company !== undefined) {
-      // Atualiza empresa do visitante existente se o campo foi preenchido
+    } else {
+      // Atualiza empresa do visitante existente
       await supabase
         .from('visitors')
         .update({ company: values.visitor_company || null })
@@ -69,10 +65,9 @@ export function useVisits() {
     const { error } = await supabase.from('visits').insert({
       visitor_id: visitorId,
       company_user_id: values.company_user_id || null,
-      visitor_type: values.visitor_type,
+      visitor_type: 'other',
       purpose: values.purpose || null,
       vehicle_plate: values.vehicle_plate ? values.vehicle_plate.toUpperCase() : null,
-      notes: values.notes || null,
       status: 'active',
     })
 
