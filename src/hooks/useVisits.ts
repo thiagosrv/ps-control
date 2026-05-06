@@ -127,7 +127,7 @@ export function useVisits() {
 }
 
 export function useVisitorSearch() {
-  async function searchByPrefix(prefix: string): Promise<Visitor[]> {
+  const searchByPrefix = useCallback(async (prefix: string): Promise<Visitor[]> => {
     if (prefix.replace(/\D/g, '').length < 5) return []
     const clean = prefix.replace(/\D/g, '')
 
@@ -138,9 +138,9 @@ export function useVisitorSearch() {
       .limit(10)
 
     return (data as Visitor[]) ?? []
-  }
+  }, [])
 
-  async function findByCPF(cpf: string): Promise<Visitor | null> {
+  const findByCPF = useCallback(async (cpf: string): Promise<Visitor | null> => {
     const clean = unformatCPF(cpf)
     if (clean.length < 11) return null
     const { data } = await supabase
@@ -149,7 +149,7 @@ export function useVisitorSearch() {
       .eq('cpf', clean)
       .single()
     return (data as unknown as Visitor) ?? null
-  }
+  }, [])
 
   return { searchByPrefix, findByCPF }
 }

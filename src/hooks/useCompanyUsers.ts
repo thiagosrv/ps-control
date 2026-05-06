@@ -19,7 +19,7 @@ export function useCompanyUsers() {
 
   useEffect(() => { fetch() }, [fetch])
 
-  async function search(query: string): Promise<CompanyUser[]> {
+  const search = useCallback(async (query: string): Promise<CompanyUser[]> => {
     if (query.length < 3) return []
     const { data } = await supabase
       .from('company_users')
@@ -29,7 +29,7 @@ export function useCompanyUsers() {
       .order('full_name')
       .limit(10)
     return (data as CompanyUser[]) ?? []
-  }
+  }, [])
 
   async function create(values: CompanyUserFormValues) {
     const { error } = await supabase.from('company_users').insert({
