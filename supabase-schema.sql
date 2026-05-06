@@ -119,11 +119,15 @@ create table if not exists public.vehicles (
 -- ============================================================
 -- VISITS
 -- ============================================================
-create type if not exists public.visitor_type_enum as enum
-  ('employee', 'supplier', 'contractor', 'other');
+do $$ begin
+  create type public.visitor_type_enum as enum ('employee', 'supplier', 'contractor', 'other');
+exception when duplicate_object then null;
+end $$;
 
-create type if not exists public.visit_status_enum as enum
-  ('active', 'completed');
+do $$ begin
+  create type public.visit_status_enum as enum ('active', 'completed');
+exception when duplicate_object then null;
+end $$;
 
 create table if not exists public.visits (
   id              uuid primary key default uuid_generate_v4(),
@@ -158,32 +162,73 @@ alter table public.visitors      enable row level security;
 alter table public.vehicles      enable row level security;
 alter table public.visits        enable row level security;
 
--- Profiles: usuário vê só o próprio row
+-- Profiles: usuário vê e edita só o próprio row
 drop policy if exists "own profile" on public.profiles;
 create policy "own profile" on public.profiles
-  for all using (id = auth.uid());
+  for all
+  using (id = auth.uid())
+  with check (id = auth.uid());
 
--- Demais tabelas: qualquer usuário autenticado acessa
--- (isolamento por projeto Supabase)
+-- Demais tabelas: qualquer usuário autenticado pode ler e escrever
+drop policy if exists "authenticated read" on public.departments;
+drop policy if exists "authenticated write" on public.departments;
 drop policy if exists "authenticated access" on public.departments;
-create policy "authenticated access" on public.departments
-  for all using (auth.role() = 'authenticated');
+create policy "authenticated read" on public.departments
+  for select using (auth.uid() is not null);
+create policy "authenticated write" on public.departments
+  for insert with check (auth.uid() is not null);
+create policy "authenticated update" on public.departments
+  for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated delete" on public.departments
+  for delete using (auth.uid() is not null);
 
+drop policy if exists "authenticated read" on public.company_users;
+drop policy if exists "authenticated write" on public.company_users;
 drop policy if exists "authenticated access" on public.company_users;
-create policy "authenticated access" on public.company_users
-  for all using (auth.role() = 'authenticated');
+create policy "authenticated read" on public.company_users
+  for select using (auth.uid() is not null);
+create policy "authenticated write" on public.company_users
+  for insert with check (auth.uid() is not null);
+create policy "authenticated update" on public.company_users
+  for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated delete" on public.company_users
+  for delete using (auth.uid() is not null);
 
+drop policy if exists "authenticated read" on public.visitors;
+drop policy if exists "authenticated write" on public.visitors;
 drop policy if exists "authenticated access" on public.visitors;
-create policy "authenticated access" on public.visitors
-  for all using (auth.role() = 'authenticated');
+create policy "authenticated read" on public.visitors
+  for select using (auth.uid() is not null);
+create policy "authenticated write" on public.visitors
+  for insert with check (auth.uid() is not null);
+create policy "authenticated update" on public.visitors
+  for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated delete" on public.visitors
+  for delete using (auth.uid() is not null);
 
+drop policy if exists "authenticated read" on public.vehicles;
+drop policy if exists "authenticated write" on public.vehicles;
 drop policy if exists "authenticated access" on public.vehicles;
-create policy "authenticated access" on public.vehicles
-  for all using (auth.role() = 'authenticated');
+create policy "authenticated read" on public.vehicles
+  for select using (auth.uid() is not null);
+create policy "authenticated write" on public.vehicles
+  for insert with check (auth.uid() is not null);
+create policy "authenticated update" on public.vehicles
+  for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated delete" on public.vehicles
+  for delete using (auth.uid() is not null);
 
+drop policy if exists "authenticated read" on public.visits;
+drop policy if exists "authenticated write" on public.visits;
 drop policy if exists "authenticated access" on public.visits;
-create policy "authenticated access" on public.visits
-  for all using (auth.role() = 'authenticated');
+create policy "authenticated read" on public.visits
+  for select using (auth.uid() is not null);
+create policy "authenticated write" on public.visits
+  for insert with check (auth.uid() is not null);
+create policy "authenticated update" on public.visits
+  for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated delete" on public.visits
+  for delete using (auth.uid() is not null);
 
 -- ============================================================
 -- FUNÇÕES RPC (gráficos do Dashboard)
@@ -215,11 +260,6 @@ $$;
 -- ============================================================
 -- STORAGE BUCKET (logo da empresa)
 -- ============================================================
--- Execute manualmente no painel Supabase > Storage:
--- 1. Criar bucket "company-assets" (não público, max 2MB)
--- 2. Adicionar política: authenticated users podem ler/escrever
---
--- Ou via SQL:
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
   'company-assets',
@@ -230,5 +270,12 @@ values (
 )
 on conflict (id) do nothing;
 
-create policy "authenticated storage access" on storage.objects
-  for all using (bucket_id = 'company-assets' and auth.role() = 'authenticated');
+drop policy if exists "authenticated storage access" on storage.objects;
+create policy "authenticated storage read" on storage.objects
+  for select using (bucket_id = 'company-assets' and auth.uid() is not null);
+create policy "authenticated storage write" on storage.objects
+  for insert with check (bucket_id = 'company-assets' and auth.uid() is not null);
+create policy "authenticated storage update" on storage.objects
+  for update using (bucket_id = 'company-assets' and auth.uid() is not null);
+create policy "authenticated storage delete" on storage.objects
+  for delete using (bucket_id = 'company-assets' and auth.uid() is not null);
