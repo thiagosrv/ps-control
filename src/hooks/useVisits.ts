@@ -58,6 +58,12 @@ export function useVisits() {
 
       if (visitorError) return { error: visitorError as Error }
       visitorId = (visitor as Visitor).id
+    } else if (values.visitor_company !== undefined) {
+      // Atualiza empresa do visitante existente se o campo foi preenchido
+      await supabase
+        .from('visitors')
+        .update({ company: values.visitor_company || null })
+        .eq('id', visitorId)
     }
 
     const { error } = await supabase.from('visits').insert({
