@@ -34,7 +34,10 @@ export function ReportsPage() {
 
   async function onSearch(values: ReportFilterValues) {
     setLoading(true)
-    const { data, error } = await fetchForReport(values)
+    const { data, error } = await fetchForReport({
+      ...values,
+      visitor_type: values.visitor_type === 'all' ? '' : values.visitor_type,
+    })
     if (error) toast.error('Erro ao buscar dados')
     else setResults(data)
     setSearched(true)
@@ -105,7 +108,7 @@ export function ReportsPage() {
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="">Todos</SelectItem>
+                        <SelectItem value="all">Todos</SelectItem>
                         <SelectItem value="employee">Funcionário</SelectItem>
                         <SelectItem value="supplier">Fornecedor</SelectItem>
                         <SelectItem value="contractor">Prestador</SelectItem>
