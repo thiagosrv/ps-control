@@ -58,7 +58,7 @@ export const reportFilterSchema = z.object({
   cpf: z.string().optional(),
   rg: z.string().optional(),
   plate: z.string().optional(),
-  visitor_type: z.enum(['employee', 'supplier', 'contractor', 'other', '']).optional(),
+  visitor_type: z.enum(['employee', 'supplier', 'contractor', 'other', 'all', '']).optional(),
   date_from: z.string().optional(),
   date_to: z.string().optional(),
 })
