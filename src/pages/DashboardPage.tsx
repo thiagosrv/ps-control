@@ -86,15 +86,15 @@ export function DashboardPage() {
           ) : (
             <div className="divide-y">
               {activeVisits.map((v) => (
-                <div key={v.id} className="flex items-center justify-between px-6 py-3">
-                  <div>
-                    <p className="text-sm font-medium text-slate-800">{v.visitor?.full_name}</p>
+                <div key={v.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 md:px-6 py-3 gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-800 truncate">{v.visitor?.full_name}</p>
                     <p className="text-xs text-slate-500">
                       Visitando: {v.company_user?.full_name ?? '—'} ·{' '}
                       {format(new Date(v.checked_in_at), "HH:mm", { locale: ptBR })}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <Badge variant="outline" className="text-xs">
                       {formatVisitorType(v.visitor_type)}
                     </Badge>

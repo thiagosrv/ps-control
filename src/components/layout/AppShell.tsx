@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
 import { Sidebar } from './Sidebar'
@@ -8,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth'
 export function AppShell() {
   const { profile, signOut, refetchProfile } = useAuth()
   const navigate = useNavigate()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   async function handleSignOut() {
     await signOut()
@@ -16,11 +18,24 @@ export function AppShell() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
-      <Sidebar onSignOut={handleSignOut} companyName={profile?.company_name} />
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-black/50 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header profile={profile} />
-        <main className="flex-1 overflow-y-auto p-6">
+      <Sidebar
+        onSignOut={handleSignOut}
+        companyName={profile?.company_name}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      <div className="flex flex-col flex-1 overflow-hidden min-w-0">
+        <Header profile={profile} onMenuClick={() => setSidebarOpen(true)} />
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <Outlet />
         </main>
       </div>

@@ -370,6 +370,7 @@ export function VisitsPage() {
       </div>
 
       <div className="rounded-lg border bg-white overflow-hidden">
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50">
@@ -435,6 +436,7 @@ export function VisitsPage() {
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       <ConfirmDialog

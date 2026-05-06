@@ -147,6 +147,7 @@ export function ReportsPage() {
         <div>
           <p className="text-sm text-slate-500 mb-3">{results.length} registro(s) encontrado(s)</p>
           <div className="rounded-lg border bg-white overflow-hidden">
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50">
@@ -187,6 +188,7 @@ export function ReportsPage() {
                 )}
               </TableBody>
             </Table>
+            </div>
           </div>
         </div>
       )}
