@@ -21,7 +21,7 @@ export function useVisits() {
       .select(VISIT_SELECT)
       .eq('status', 'active')
       .order('checked_in_at', { ascending: false })
-    setActiveVisits((data as Visit[]) ?? [])
+    setActiveVisits((data as unknown as Visit[]) ?? [])
     setLoading(false)
   }, [])
 

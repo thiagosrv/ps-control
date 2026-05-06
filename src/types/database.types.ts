@@ -98,6 +98,7 @@ export interface Database {
           cpf: string | null
           rg: string | null
           phone: string | null
+          company: string | null
           blacklisted: boolean
           blacklist_reason: string | null
           created_at: string
@@ -109,6 +110,7 @@ export interface Database {
           cpf?: string | null
           rg?: string | null
           phone?: string | null
+          company?: string | null
           blacklisted?: boolean
           blacklist_reason?: string | null
         }
@@ -118,6 +120,7 @@ export interface Database {
           cpf?: string | null
           rg?: string | null
           phone?: string | null
+          company?: string | null
           blacklisted?: boolean
           blacklist_reason?: string | null
         }
