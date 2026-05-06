@@ -31,7 +31,7 @@ const VISITOR_TYPE_BADGE: Record<string, string> = {
 export function VisitsPage() {
   const { activeVisits, loading: visitsLoading, createVisit, endVisit } = useVisits()
   const { search: searchUsers } = useCompanyUsers()
-  const { searchByPrefix, findByCPF } = useVisitorSearch()
+  const { searchByPrefix, findByCPF, searchCompanies } = useVisitorSearch()
 
   const [prefixQuery, setPrefixQuery] = useState('')
   const [prefixResults, setPrefixResults] = useState<Visitor[]>([])
@@ -41,12 +41,16 @@ export function VisitsPage() {
   const [userResults, setUserResults] = useState<CompanyUser[]>([])
   const [selectedUser, setSelectedUser] = useState<CompanyUser | null>(null)
   const [showUserDropdown, setShowUserDropdown] = useState(false)
+  const [companyQuery, setCompanyQuery] = useState('')
+  const [companySuggestions, setCompanySuggestions] = useState<string[]>([])
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [endTarget, setEndTarget] = useState<Visit | null>(null)
   const [printVisit, setPrintVisit] = useState<Visit | null>(null)
 
   const prefixTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const userTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const companyTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const form = useForm<VisitFormValues>({
     resolver: zodResolver(visitFormSchema),
@@ -55,6 +59,7 @@ export function VisitsPage() {
       cpf: '',
       rg: '',
       phone: '',
+      visitor_company: '',
       company_user_id: '',
       purpose: '',
       visitor_type: 'other',
@@ -74,6 +79,18 @@ export function VisitsPage() {
     }, 300)
     return () => clearTimeout(prefixTimerRef.current)
   }, [prefixQuery, searchByPrefix])
+
+  // Company autocomplete
+  useEffect(() => {
+    clearTimeout(companyTimerRef.current)
+    if (companyQuery.length < 5) { setCompanySuggestions([]); setShowCompanyDropdown(false); return }
+    companyTimerRef.current = setTimeout(async () => {
+      const results = await searchCompanies(companyQuery)
+      setCompanySuggestions(results)
+      setShowCompanyDropdown(results.length > 0)
+    }, 300)
+    return () => clearTimeout(companyTimerRef.current)
+  }, [companyQuery, searchCompanies])
 
   // User autocomplete
   useEffect(() => {
@@ -102,12 +119,15 @@ export function VisitsPage() {
     form.setValue('cpf', visitor.cpf ? formatCPF(visitor.cpf) : '')
     form.setValue('rg', visitor.rg ?? '')
     form.setValue('phone', visitor.phone ?? '')
+    form.setValue('visitor_company', visitor.company ?? '')
+    setCompanyQuery(visitor.company ?? '')
   }
 
   function clearVisitor() {
     setSelectedVisitor(null)
     setBlacklistAlert('')
-    form.reset({ visitor_name: '', cpf: '', rg: '', phone: '', company_user_id: form.getValues('company_user_id'), purpose: form.getValues('purpose'), visitor_type: form.getValues('visitor_type'), vehicle_plate: '', notes: '' })
+    setCompanyQuery('')
+    form.reset({ visitor_name: '', cpf: '', rg: '', phone: '', visitor_company: '', company_user_id: form.getValues('company_user_id'), purpose: form.getValues('purpose'), visitor_type: form.getValues('visitor_type'), vehicle_plate: '', notes: '' })
   }
 
   function selectUser(user: CompanyUser) {
@@ -133,11 +153,12 @@ export function VisitsPage() {
       toast.error('Erro ao registrar visita: ' + (error as { message?: string }).message)
     } else {
       toast.success('Visita registrada com sucesso!')
-      form.reset({ visitor_name: '', cpf: '', rg: '', phone: '', company_user_id: '', purpose: '', visitor_type: 'other', vehicle_plate: '', notes: '' })
+      form.reset({ visitor_name: '', cpf: '', rg: '', phone: '', visitor_company: '', company_user_id: '', purpose: '', visitor_type: 'other', vehicle_plate: '', notes: '' })
       setSelectedVisitor(null)
       setSelectedUser(null)
       setUserQuery('')
       setPrefixQuery('')
+      setCompanyQuery('')
     }
     setSubmitting(false)
   }
@@ -253,7 +274,7 @@ export function VisitsPage() {
                 )} />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="phone" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Telefone</FormLabel>
@@ -262,9 +283,52 @@ export function VisitsPage() {
                   </FormItem>
                 )} />
 
+                {/* Visitor Company Autocomplete */}
+                <FormField control={form.control} name="visitor_company" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Empresa do visitante</FormLabel>
+                    <div className="relative">
+                      <FormControl>
+                        <Input
+                          placeholder="Digite 5 letras para buscar..."
+                          {...field}
+                          value={companyQuery}
+                          onChange={(e) => {
+                            setCompanyQuery(e.target.value)
+                            field.onChange(e.target.value)
+                          }}
+                          onFocus={() => companySuggestions.length > 0 && setShowCompanyDropdown(true)}
+                          onBlur={() => setTimeout(() => setShowCompanyDropdown(false), 150)}
+                        />
+                      </FormControl>
+                      {showCompanyDropdown && companySuggestions.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 z-50 bg-white border rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
+                          {companySuggestions.map((name) => (
+                            <button
+                              key={name}
+                              type="button"
+                              className="w-full px-4 py-2.5 text-left text-sm hover:bg-blue-50"
+                              onClick={() => {
+                                setCompanyQuery(name)
+                                field.onChange(name)
+                                setShowCompanyDropdown(false)
+                              }}
+                            >
+                              {name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
                 {/* Company User Autocomplete */}
                 <FormField control={form.control} name="company_user_id" render={() => (
-                  <FormItem className="md:col-span-2">
+                  <FormItem>
                     <FormLabel>Pessoa a ser visitada *</FormLabel>
                     <div className="relative">
                       <FormControl>

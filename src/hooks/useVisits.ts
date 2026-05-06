@@ -51,6 +51,7 @@ export function useVisits() {
           cpf: cpfClean || null,
           rg: values.rg || null,
           phone: values.phone || null,
+          company: values.visitor_company || null,
         })
         .select()
         .single()
@@ -151,5 +152,17 @@ export function useVisitorSearch() {
     return (data as unknown as Visitor) ?? null
   }, [])
 
-  return { searchByPrefix, findByCPF }
+  const searchCompanies = useCallback(async (query: string): Promise<string[]> => {
+    if (query.length < 5) return []
+    const { data } = await supabase
+      .from('visitors')
+      .select('company')
+      .ilike('company', `%${query}%`)
+      .not('company', 'is', null)
+      .limit(10)
+    const unique = [...new Set((data ?? []).map((r) => r.company as string).filter(Boolean))]
+    return unique
+  }, [])
+
+  return { searchByPrefix, findByCPF, searchCompanies }
 }

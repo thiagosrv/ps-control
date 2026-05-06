@@ -36,6 +36,7 @@ export interface Visitor {
   cpf: string | null
   rg: string | null
   phone: string | null
+  company: string | null
   blacklisted: boolean
   blacklist_reason: string | null
 }

@@ -5,6 +5,7 @@ export const visitFormSchema = z.object({
   cpf: z.string().optional(),
   rg: z.string().optional(),
   phone: z.string().optional(),
+  visitor_company: z.string().optional(),
   company_user_id: z.string().min(1, 'Selecione quem será visitado'),
   purpose: z.string().min(3, 'Informe o motivo da visita'),
   visitor_type: z.enum(['employee', 'supplier', 'contractor', 'other']),
