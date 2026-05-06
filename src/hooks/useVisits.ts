@@ -44,16 +44,14 @@ export function useVisits() {
     if (!visitorId) {
       const cpfClean = values.cpf ? unformatCPF(values.cpf) : null
 
-      const insertData = {
-        full_name: values.visitor_name,
-        cpf: cpfClean || null,
-        rg: values.rg || null,
-        phone: values.phone || null,
-      }
-
       const { data: visitor, error: visitorError } = await supabase
         .from('visitors')
-        .insert(insertData)
+        .insert({
+          full_name: values.visitor_name,
+          cpf: cpfClean || null,
+          rg: values.rg || null,
+          phone: values.phone || null,
+        })
         .select()
         .single()
 
@@ -71,6 +69,7 @@ export function useVisits() {
       status: 'active',
     })
 
+    if (!error) await fetchActive()
     return { error: error as Error | null }
   }
 
@@ -79,6 +78,7 @@ export function useVisits() {
       .from('visits')
       .update({ status: 'completed', checked_out_at: new Date().toISOString() })
       .eq('id', id)
+    if (!error) await fetchActive()
     return error
   }
 

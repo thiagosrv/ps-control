@@ -42,7 +42,18 @@ export function useDashboardStats() {
     setLoading(false)
   }, [])
 
-  useEffect(() => { fetch() }, [fetch])
+  useEffect(() => {
+    fetch()
+
+    const channel = supabase
+      .channel('dashboard-visits')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'visits' }, () => {
+        fetch()
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [fetch])
 
   return { stats, hourlyData, weeklyData, recentVisits, loading, refetch: fetch }
 }
