@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { UserCheck, Phone, LogOut, AlertCircle, Printer, ClipboardList, Building2 } from 'lucide-react'
+import { Search, UserCheck, Phone, LogOut, AlertCircle, Printer, ClipboardList, Building2 } from 'lucide-react'
 import { useVisits, useVisitorSearch } from '@/hooks/useVisits'
 import { useCompanyUsers } from '@/hooks/useCompanyUsers'
 import { visitFormSchema, type VisitFormValues } from '@/lib/validators'
@@ -22,19 +22,24 @@ import type { Visitor, CompanyUser, Visit } from '@/types/app.types'
 export function VisitsPage() {
   const { activeVisits, loading: visitsLoading, createVisit, endVisit } = useVisits()
   const { search: searchUsers } = useCompanyUsers()
-  const { searchByPrefix, searchCompanies } = useVisitorSearch()
+  const { searchVisitors, searchCompanies } = useVisitorSearch()
 
-  const [docQuery, setDocQuery] = useState('')
-  const [docResults, setDocResults] = useState<Visitor[]>([])
-  const [showDocDropdown, setShowDocDropdown] = useState(false)
+  // Busca rápida
+  const [quickQuery, setQuickQuery] = useState('')
+  const [quickResults, setQuickResults] = useState<Visitor[]>([])
+  const [showQuickDropdown, setShowQuickDropdown] = useState(false)
+
+  // Visitante selecionado / alerta
   const [selectedVisitor, setSelectedVisitor] = useState<Visitor | null>(null)
   const [blacklistAlert, setBlacklistAlert] = useState('')
 
+  // Pessoa a ser visitada
   const [userQuery, setUserQuery] = useState('')
   const [userResults, setUserResults] = useState<CompanyUser[]>([])
   const [selectedUser, setSelectedUser] = useState<CompanyUser | null>(null)
   const [showUserDropdown, setShowUserDropdown] = useState(false)
 
+  // Empresa
   const [companyQuery, setCompanyQuery] = useState('')
   const [companySuggestions, setCompanySuggestions] = useState<string[]>([])
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false)
@@ -43,7 +48,7 @@ export function VisitsPage() {
   const [endTarget, setEndTarget] = useState<Visit | null>(null)
   const [printVisit, setPrintVisit] = useState<Visit | null>(null)
 
-  const docTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const quickTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const userTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const companyTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
@@ -59,20 +64,19 @@ export function VisitsPage() {
     },
   })
 
-  // Busca visitante pelo documento (5+ dígitos)
+  // Busca rápida por nome ou documento
   useEffect(() => {
-    clearTimeout(docTimerRef.current)
-    const clean = docQuery.replace(/\D/g, '')
-    if (clean.length < 5) { setDocResults([]); setShowDocDropdown(false); return }
-    docTimerRef.current = setTimeout(async () => {
-      const results = await searchByPrefix(clean)
-      setDocResults(results)
-      setShowDocDropdown(results.length > 0)
+    clearTimeout(quickTimerRef.current)
+    if (quickQuery.trim().length < 2) { setQuickResults([]); setShowQuickDropdown(false); return }
+    quickTimerRef.current = setTimeout(async () => {
+      const results = await searchVisitors(quickQuery)
+      setQuickResults(results)
+      setShowQuickDropdown(results.length > 0)
     }, 300)
-    return () => clearTimeout(docTimerRef.current)
-  }, [docQuery, searchByPrefix])
+    return () => clearTimeout(quickTimerRef.current)
+  }, [quickQuery, searchVisitors])
 
-  // Autocomplete de empresa
+  // Autocomplete empresa
   useEffect(() => {
     clearTimeout(companyTimerRef.current)
     if (companyQuery.length < 5) { setCompanySuggestions([]); setShowCompanyDropdown(false); return }
@@ -84,7 +88,7 @@ export function VisitsPage() {
     return () => clearTimeout(companyTimerRef.current)
   }, [companyQuery, searchCompanies])
 
-  // Autocomplete de pessoa visitada
+  // Autocomplete pessoa visitada
   useEffect(() => {
     clearTimeout(userTimerRef.current)
     if (userQuery.length < 3) { setUserResults([]); setShowUserDropdown(false); return }
@@ -98,13 +102,13 @@ export function VisitsPage() {
 
   function selectVisitor(visitor: Visitor) {
     setBlacklistAlert('')
-    setShowDocDropdown(false)
+    setShowQuickDropdown(false)
+    setQuickQuery('')
     if (visitor.blacklisted) {
       setBlacklistAlert(`Visitante bloqueado: ${visitor.blacklist_reason ?? 'sem motivo informado'}`)
       return
     }
     setSelectedVisitor(visitor)
-    setDocQuery(visitor.cpf ?? visitor.rg ?? '')
     form.setValue('visitor_name', visitor.full_name)
     form.setValue('documento', visitor.cpf ?? visitor.rg ?? '')
     form.setValue('visitor_company', visitor.company ?? '')
@@ -114,7 +118,6 @@ export function VisitsPage() {
   function clearVisitor() {
     setSelectedVisitor(null)
     setBlacklistAlert('')
-    setDocQuery('')
     setCompanyQuery('')
     form.reset({
       visitor_name: '',
@@ -137,7 +140,7 @@ export function VisitsPage() {
     form.reset({ visitor_name: '', documento: '', visitor_company: '', company_user_id: '', purpose: '', vehicle_plate: '' })
     setSelectedVisitor(null)
     setSelectedUser(null)
-    setDocQuery('')
+    setQuickQuery('')
     setCompanyQuery('')
     setUserQuery('')
   }, [form])
@@ -172,40 +175,82 @@ export function VisitsPage() {
     <div>
       <PageHeader title="Registro de Visitas" description="Registre a entrada e saída de visitantes" />
 
-      <Card className="mb-8">
+      {/* Busca rápida */}
+      <Card className="mb-6">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Nova visita</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Search className="h-4 w-4 text-blue-600" />
+            Busca rápida de visitante
+          </CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="relative max-w-sm">
+            <Input
+              placeholder="Buscar por nome ou documento..."
+              value={quickQuery}
+              onChange={(e) => setQuickQuery(e.target.value)}
+              onBlur={() => setTimeout(() => setShowQuickDropdown(false), 150)}
+              onFocus={() => quickResults.length > 0 && setShowQuickDropdown(true)}
+            />
+            {showQuickDropdown && quickResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 z-50 bg-white border rounded-lg shadow-lg mt-1 max-h-56 overflow-y-auto">
+                {quickResults.map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-blue-50 transition-colors"
+                    onClick={() => selectVisitor(v)}
+                  >
+                    <UserCheck className="h-4 w-4 text-blue-500 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">{v.full_name}</p>
+                      <p className="text-xs text-slate-500">
+                        {v.cpf ?? v.rg ?? 'Sem documento'}
+                        {v.company && <span className="ml-2">· {v.company}</span>}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           {blacklistAlert && (
-            <Alert variant="destructive" className="mb-4">
+            <Alert variant="destructive" className="mt-3 max-w-sm">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{blacklistAlert}</AlertDescription>
             </Alert>
           )}
 
           {selectedVisitor && (
-            <div className="mb-4 flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
+            <div className="mt-3 flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg px-4 py-2.5 max-w-sm">
               <UserCheck className="h-4 w-4 text-green-600 shrink-0" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-green-800">{selectedVisitor.full_name}</p>
-                <p className="text-xs text-green-600">Visitante encontrado no cadastro</p>
+                <p className="text-xs text-green-600">Cadastro encontrado — dados preenchidos</p>
               </div>
               <button type="button" onClick={clearVisitor} className="text-xs text-slate-500 underline shrink-0">
                 Limpar
               </button>
             </div>
           )}
+        </CardContent>
+      </Card>
 
+      {/* Formulário */}
+      <Card className="mb-8">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Dados da visita</CardTitle>
+        </CardHeader>
+        <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
-              {/* Row 1: Nome + Documento */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="visitor_name" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Nome *</FormLabel>
-                    <FormControl><Input placeholder="Nome completo do visitante" {...field} /></FormControl>
+                    <FormControl><Input placeholder="Nome completo" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -213,48 +258,12 @@ export function VisitsPage() {
                 <FormField control={form.control} name="documento" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Documento (CPF ou RG)</FormLabel>
-                    <div className="relative">
-                      <FormControl>
-                        <Input
-                          placeholder="Digite 5+ dígitos para buscar cadastro..."
-                          {...field}
-                          value={docQuery}
-                          onChange={(e) => {
-                            setDocQuery(e.target.value)
-                            field.onChange(e.target.value)
-                            if (selectedVisitor) setSelectedVisitor(null)
-                          }}
-                          onBlur={() => setTimeout(() => setShowDocDropdown(false), 150)}
-                        />
-                      </FormControl>
-                      {showDocDropdown && docResults.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 z-50 bg-white border rounded-lg shadow-lg mt-1 max-h-56 overflow-y-auto">
-                          {docResults.map((v) => (
-                            <button
-                              key={v.id}
-                              type="button"
-                              className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-blue-50 transition-colors"
-                              onClick={() => selectVisitor(v)}
-                            >
-                              <UserCheck className="h-4 w-4 text-blue-500 shrink-0" />
-                              <div>
-                                <p className="text-sm font-medium">{v.full_name}</p>
-                                <p className="text-xs text-slate-500">
-                                  Doc: {v.cpf ?? v.rg ?? '—'}
-                                  {v.company && <span className="ml-2">· {v.company}</span>}
-                                </p>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    <FormControl><Input placeholder="Digite o documento" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
               </div>
 
-              {/* Row 2: Empresa + Pessoa visitada */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="visitor_company" render={({ field }) => (
                   <FormItem>
@@ -262,7 +271,7 @@ export function VisitsPage() {
                     <div className="relative">
                       <FormControl>
                         <Input
-                          placeholder="Digite 5+ letras para sugestões..."
+                          placeholder="Digite a empresa"
                           {...field}
                           value={companyQuery}
                           onChange={(e) => {
@@ -303,7 +312,7 @@ export function VisitsPage() {
                     <div className="relative">
                       <FormControl>
                         <Input
-                          placeholder="Digite 3+ letras para buscar..."
+                          placeholder="Digite o nome para buscar"
                           value={userQuery}
                           onChange={(e) => {
                             setUserQuery(e.target.value)
@@ -346,12 +355,11 @@ export function VisitsPage() {
                 )} />
               </div>
 
-              {/* Row 3: Motivo + Placa */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="purpose" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Motivo da visita *</FormLabel>
-                    <FormControl><Input placeholder="Ex: Reunião, Entrega, Manutenção..." {...field} /></FormControl>
+                    <FormControl><Input placeholder="Ex: Reunião, Entrega, Manutenção" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -382,7 +390,7 @@ export function VisitsPage() {
 
       <Separator className="mb-6" />
 
-      {/* Tabela de visitas ativas */}
+      {/* Visitas ativas */}
       <div className="flex items-center gap-2 mb-4">
         <ClipboardList className="h-5 w-5 text-slate-600" />
         <h2 className="text-lg font-semibold text-slate-800">

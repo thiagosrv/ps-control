@@ -142,6 +142,21 @@ export function useVisitorSearch() {
     return (data as Visitor[]) ?? []
   }, [])
 
+  const searchVisitors = useCallback(async (query: string): Promise<Visitor[]> => {
+    if (query.trim().length < 2) return []
+    const clean = query.replace(/\D/g, '')
+    // Se parece numérico busca por documento, senão por nome
+    const filter = clean.length >= 3
+      ? `cpf.ilike.${clean}%,rg.ilike.${clean}%,full_name.ilike.%${query}%`
+      : `full_name.ilike.%${query}%`
+    const { data } = await supabase
+      .from('visitors')
+      .select('*')
+      .or(filter)
+      .limit(8)
+    return (data as Visitor[]) ?? []
+  }, [])
+
   const findByCPF = useCallback(async (cpf: string): Promise<Visitor | null> => {
     const clean = unformatCPF(cpf)
     if (clean.length < 11) return null
@@ -165,5 +180,5 @@ export function useVisitorSearch() {
     return unique
   }, [])
 
-  return { searchByPrefix, findByCPF, searchCompanies }
+  return { searchByPrefix, searchVisitors, findByCPF, searchCompanies }
 }
