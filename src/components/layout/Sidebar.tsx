@@ -9,7 +9,6 @@ import {
   FileText,
   Settings,
   LogOut,
-  ShieldCheck,
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -35,7 +34,6 @@ interface Props {
 export function Sidebar({ onSignOut, companyName, open, onClose }: Props) {
   const location = useLocation()
 
-  // Fecha ao navegar no mobile
   useEffect(() => {
     onClose()
   }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -43,30 +41,41 @@ export function Sidebar({ onSignOut, companyName, open, onClose }: Props) {
   return (
     <aside
       className={cn(
-        'flex flex-col w-64 bg-slate-900 text-slate-100 shrink-0',
+        'flex flex-col w-64 shrink-0',
         'fixed inset-y-0 left-0 z-30 transition-transform duration-300 ease-in-out',
         'md:relative md:translate-x-0 md:h-full',
         open ? 'translate-x-0' : '-translate-x-full',
       )}
+      style={{ backgroundColor: 'oklch(0.188 0.075 262)' }}
     >
-      <div className="flex items-center justify-between px-5 py-5 border-b border-slate-700">
-        <div className="flex items-center gap-2 overflow-hidden">
-          <ShieldCheck className="h-7 w-7 text-blue-400 shrink-0" />
-          <div className="overflow-hidden">
-            <p className="font-semibold text-white text-sm leading-tight truncate">PS Control</p>
-            <p className="text-xs text-slate-400 truncate">{companyName ?? 'Portaria'}</p>
+      {/* Logo */}
+      <div className="flex items-center justify-between px-4 py-4 border-b" style={{ borderColor: 'oklch(0.255 0.065 262)' }}>
+        <div className="flex items-center gap-2 overflow-hidden min-w-0">
+          <img
+            src="/logo.png"
+            alt="PS Control"
+            className="h-10 w-auto shrink-0 object-contain"
+            style={{ mixBlendMode: 'screen' }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+          />
+          <div className="overflow-hidden min-w-0">
+            <p className="font-bold text-white text-sm leading-tight truncate">PS Control</p>
+            <p className="text-xs truncate" style={{ color: 'oklch(0.838 0.176 86.4)' }}>
+              {companyName ?? 'Portaria'}
+            </p>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="md:hidden text-slate-400 hover:text-white p-1 rounded"
+          className="md:hidden p-1 rounded text-slate-400 hover:text-white"
           aria-label="Fechar menu"
         >
           <X className="h-5 w-5" />
         </button>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      {/* Nav */}
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {navItems.map(({ label, to, icon: Icon, end }) => (
           <NavLink
             key={to}
@@ -74,23 +83,32 @@ export function Sidebar({ onSignOut, companyName, open, onClose }: Props) {
             end={end}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
                 isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white',
+                  ? 'text-slate-900 shadow-sm'
+                  : 'text-slate-300 hover:text-white',
               )
             }
+            style={({ isActive }) => isActive
+              ? { backgroundColor: 'oklch(0.838 0.176 86.4)' }
+              : { }
+            }
           >
-            <Icon className="h-4 w-4 shrink-0" />
-            {label}
+            {({ isActive }) => (
+              <>
+                <Icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-slate-800' : '')} />
+                {label}
+              </>
+            )}
           </NavLink>
         ))}
       </nav>
 
-      <div className="px-3 py-4 border-t border-slate-700">
+      {/* Sair */}
+      <div className="px-3 py-4 border-t" style={{ borderColor: 'oklch(0.255 0.065 262)' }}>
         <Button
           variant="ghost"
-          className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-slate-800"
+          className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/10"
           onClick={onSignOut}
         >
           <LogOut className="h-4 w-4" />

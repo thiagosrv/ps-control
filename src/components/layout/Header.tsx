@@ -10,7 +10,7 @@ interface Props {
 
 export function Header({ profile, onMenuClick }: Props) {
   return (
-    <header className="h-14 border-b bg-white flex items-center justify-between px-4 md:px-6 shrink-0">
+    <header className="h-14 bg-white border-b flex items-center justify-between px-4 md:px-6 shrink-0 shadow-sm">
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
@@ -19,18 +19,24 @@ export function Header({ profile, onMenuClick }: Props) {
         >
           <Menu className="h-5 w-5" />
         </button>
-        <p className="text-sm text-slate-500 capitalize hidden sm:block">
-          {format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+        <p className="text-sm text-slate-400 capitalize hidden sm:block">
+          {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
         </p>
-        <p className="text-sm text-slate-500 sm:hidden">
+        <p className="text-sm text-slate-400 sm:hidden">
           {format(new Date(), 'dd/MM/yyyy')}
         </p>
       </div>
-      <div className="flex items-center gap-2 text-sm text-slate-600">
-        <User className="h-4 w-4" />
-        <span className="truncate max-w-[140px]">
-          {profile?.full_name ?? profile?.email ?? 'Porteiro'}
-        </span>
+
+      <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 bg-slate-50 border rounded-full px-3 py-1.5">
+          <div className="h-6 w-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+            style={{ backgroundColor: 'oklch(0.188 0.075 262)' }}>
+            <User className="h-3.5 w-3.5" />
+          </div>
+          <span className="text-sm font-medium text-slate-700 truncate max-w-[120px]">
+            {profile?.full_name?.split(' ')[0] ?? profile?.email?.split('@')[0] ?? 'Porteiro'}
+          </span>
+        </div>
       </div>
     </header>
   )

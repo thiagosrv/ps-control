@@ -3,7 +3,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Mapeia CSS variables -> classes utilitárias do Tailwind v4 */
 @theme inline {
   --color-background:             var(--background);
   --color-foreground:             var(--foreground);
@@ -35,41 +34,41 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Design tokens — esquema azul profissional */
+/* PS Control — Navy #162050 + Ouro #F5C200 */
 :root {
   --radius: 0.5rem;
 
-  --background:           oklch(1 0 0);
-  --foreground:           oklch(0.145 0 0);
+  --background:           oklch(0.974 0.003 264);
+  --foreground:           oklch(0.17 0.055 262);
   --card:                 oklch(1 0 0);
-  --card-foreground:      oklch(0.145 0 0);
+  --card-foreground:      oklch(0.17 0.055 262);
   --popover:              oklch(1 0 0);
-  --popover-foreground:   oklch(0.145 0 0);
+  --popover-foreground:   oklch(0.17 0.055 262);
 
-  /* Azul principal */
-  --primary:              oklch(0.546 0.245 262.881);
-  --primary-foreground:   oklch(1 0 0);
+  /* Ouro/Amarelo — botões CTA principais */
+  --primary:              oklch(0.838 0.176 86.4);
+  --primary-foreground:   oklch(0.17 0.055 262);
 
-  --secondary:            oklch(0.967 0.003 264.542);
-  --secondary-foreground: oklch(0.21 0.034 264.665);
-  --muted:                oklch(0.967 0.003 264.542);
-  --muted-foreground:     oklch(0.551 0.018 264.364);
-  --accent:               oklch(0.967 0.003 264.542);
-  --accent-foreground:    oklch(0.21 0.034 264.665);
+  --secondary:            oklch(0.953 0.008 264);
+  --secondary-foreground: oklch(0.22 0.07 262);
+  --muted:                oklch(0.953 0.008 264);
+  --muted-foreground:     oklch(0.52 0.018 264);
+  --accent:               oklch(0.953 0.008 264);
+  --accent-foreground:    oklch(0.22 0.07 262);
 
   --destructive:            oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
 
-  --border: oklch(0.928 0.006 264.531);
-  --input:  oklch(0.928 0.006 264.531);
-  --ring:   oklch(0.546 0.245 262.881);
+  --border: oklch(0.908 0.008 264);
+  --input:  oklch(0.908 0.008 264);
+  --ring:   oklch(0.838 0.176 86.4);
 
-  /* Sidebar escura slate-900 */
-  --sidebar-background:          oklch(0.208 0.042 265.755);
-  --sidebar-foreground:          oklch(0.967 0.003 264.542);
-  --sidebar-accent:              oklch(0.279 0.041 265.755);
-  --sidebar-accent-foreground:   oklch(1 0 0);
-  --sidebar-border:              oklch(0.279 0.041 265.755);
+  /* Sidebar — Navy profundo */
+  --sidebar-background:          oklch(0.188 0.075 262);
+  --sidebar-foreground:          oklch(0.92 0.01 264);
+  --sidebar-accent:              oklch(0.838 0.176 86.4);
+  --sidebar-accent-foreground:   oklch(0.17 0.055 262);
+  --sidebar-border:              oklch(0.255 0.065 262);
 }
 
 @layer base {
