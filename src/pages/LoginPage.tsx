@@ -40,45 +40,58 @@ export function LoginPage() {
   return (
     <div className="min-h-screen flex">
 
-      {/* ── LADO ESQUERDO — Branco ── */}
-      <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 xl:p-16 bg-white relative overflow-hidden">
+      {/* ══════════════════════════════════
+          ESQUERDA — Fundo branco / Hero
+      ══════════════════════════════════ */}
+      <div className="hidden lg:flex flex-col justify-between w-1/2 bg-white p-14 xl:p-20 relative overflow-hidden">
 
-        {/* Círculo decorativo sutil */}
-        <div className="absolute -bottom-40 -left-40 w-[480px] h-[480px] rounded-full opacity-[0.04]"
-          style={{ background: NAVY }} />
+        {/* Textura pontilhada sutil */}
+        <div
+          className="absolute inset-0 opacity-[0.025]"
+          style={{
+            backgroundImage: `radial-gradient(${NAVY} 1px, transparent 1px)`,
+            backgroundSize: '24px 24px',
+          }}
+        />
 
-        <div>
-          {/* Logo grande */}
-          <div className="mb-12">
-            <img
-              src="/logo.png"
-              alt="PS Control"
-              className="h-48 w-auto object-contain"
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-            />
-          </div>
+        {/* Círculo decorativo canto inferior */}
+        <div
+          className="absolute -bottom-48 -left-48 w-[520px] h-[520px] rounded-full opacity-[0.06]"
+          style={{ background: NAVY }}
+        />
+
+        <div className="relative z-10">
+          {/* Logo */}
+          <img
+            src="/logo.png"
+            alt="PS Control"
+            className="h-48 w-auto object-contain mb-14"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+          />
 
           {/* Headline */}
-          <h1 className="text-4xl xl:text-5xl font-bold leading-tight mb-4" style={{ color: NAVY }}>
+          <h1 className="text-4xl xl:text-5xl font-extrabold leading-[1.15] mb-5" style={{ color: NAVY }}>
             Controle de acesso<br />
-            <span style={{ color: GOLD }}>inteligente</span> para<br />
-            sua portaria.
+            <span style={{ color: GOLD }}>inteligente</span><br />
+            para sua portaria.
           </h1>
-          <p className="text-lg leading-relaxed text-slate-500">
-            Registre visitas, gerencie entradas e saídas e mantenha a segurança do seu condomínio ou empresa em tempo real.
+          <p className="text-base leading-relaxed text-slate-400 max-w-sm">
+            Registre visitas, gerencie entradas e saídas e mantenha a segurança do seu condomínio em tempo real.
           </p>
         </div>
 
         {/* Features */}
-        <div className="space-y-5 relative z-10">
+        <div className="relative z-10 space-y-5">
           {[
             { icon: ShieldCheck, label: 'Controle total de visitantes', desc: 'Cadastro, histórico e blacklist integrados' },
-            { icon: Clock,        label: 'Registro em tempo real',       desc: 'Entradas e saídas atualizadas na hora' },
-            { icon: FileText,     label: 'Relatórios completos',         desc: 'Exportação em PDF e CSV com filtros' },
+            { icon: Clock,        label: 'Atualizações em tempo real',   desc: 'Entradas e saídas sem precisar recarregar' },
+            { icon: FileText,     label: 'Relatórios completos',         desc: 'Exportação em PDF e CSV com filtros avançados' },
           ].map(({ icon: Icon, label, desc }) => (
-            <div key={label} className="flex items-start gap-4">
-              <div className="flex items-center justify-center h-10 w-10 rounded-xl shrink-0"
-                style={{ backgroundColor: `${GOLD}28` }}>
+            <div key={label} className="flex items-center gap-4">
+              <div
+                className="flex items-center justify-center h-10 w-10 rounded-xl shrink-0"
+                style={{ backgroundColor: `${GOLD}22` }}
+              >
                 <Icon className="h-5 w-5" style={{ color: GOLD }} />
               </div>
               <div>
@@ -89,47 +102,80 @@ export function LoginPage() {
           ))}
         </div>
 
-        {/* Rodapé esquerdo */}
-        <p className="text-xs text-slate-300">
-          © PS Control — Proteção &amp; Segurança
+        <p className="relative z-10 text-xs text-slate-300">
+          © {new Date().getFullYear()} PS Control — Proteção &amp; Segurança
         </p>
       </div>
 
-      {/* ── LADO DIREITO — Degradê branco → navy ── */}
+      {/* ══════════════════════════════════
+          DIREITA — Fundo navy / Login
+      ══════════════════════════════════ */}
       <div
-        className="flex flex-col items-center justify-center w-full lg:w-1/2 p-6 sm:p-10 relative"
-        style={{
-          background: `linear-gradient(to right, #ffffff 0%, oklch(0.188 0.075 262) 60%)`,
-        }}
+        className="flex flex-col items-center justify-center w-full lg:w-1/2 p-6 sm:p-10 relative overflow-hidden"
+        style={{ backgroundColor: NAVY }}
       >
+        {/* Textura pontilhada sutil no navy */}
+        <div
+          className="absolute inset-0 opacity-[0.06]"
+          style={{
+            backgroundImage: `radial-gradient(rgba(255,255,255,0.8) 1px, transparent 1px)`,
+            backgroundSize: '28px 28px',
+          }}
+        />
+
+        {/* Círculo decorativo dourado difuso */}
+        <div
+          className="absolute -top-40 -right-40 w-96 h-96 rounded-full opacity-10 blur-3xl"
+          style={{ background: GOLD }}
+        />
+        <div
+          className="absolute -bottom-32 -left-32 w-72 h-72 rounded-full opacity-10 blur-3xl"
+          style={{ background: GOLD }}
+        />
+
         {/* Logo mobile */}
-        <div className="flex lg:hidden mb-10">
-          <img
-            src="/logo.png"
-            alt="PS Control"
-            className="h-24 w-auto object-contain"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-          />
+        <div className="flex lg:hidden mb-10 relative z-10">
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-4">
+            <img
+              src="/logo.png"
+              alt="PS Control"
+              className="h-20 w-auto object-contain"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+            />
+          </div>
         </div>
 
-        {/* Card de login */}
+        {/* ── Card glass ── */}
         <div className="w-full max-w-md relative z-10">
-          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-            {/* Barra dourada */}
-            <div className="h-1.5 w-full" style={{ background: GOLD }} />
+          <div
+            className="rounded-3xl overflow-hidden"
+            style={{
+              background: 'rgba(255, 255, 255, 0.07)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              boxShadow: '0 32px 64px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1)',
+            }}
+          >
+            {/* Barra dourada topo */}
+            <div className="h-1 w-full" style={{ background: GOLD }} />
 
             <div className="p-8 sm:p-10">
+              {/* Cabeçalho */}
               <div className="mb-8">
-                <h2 className="text-2xl font-bold mb-1" style={{ color: NAVY }}>
-                  Bem-vindo de volta
+                <p className="text-xs font-semibold tracking-[0.2em] uppercase mb-2" style={{ color: GOLD }}>
+                  Portaria
+                </p>
+                <h2 className="text-2xl font-bold text-white">
+                  Acesso ao sistema
                 </h2>
-                <p className="text-sm text-slate-500">
-                  Entre com suas credenciais de portaria
+                <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  Entre com suas credenciais
                 </p>
               </div>
 
               {error && (
-                <Alert variant="destructive" className="mb-6">
+                <Alert variant="destructive" className="mb-6 border-red-500/30 bg-red-500/10 text-red-300">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
@@ -142,49 +188,67 @@ export function LoginPage() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-700 font-medium">E-mail</FormLabel>
+                        <FormLabel className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                          E-mail
+                        </FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'rgba(255,255,255,0.35)' }} />
                             <Input
                               type="email"
                               placeholder="porteiro@empresa.com"
                               autoComplete="username"
-                              className="pl-10 h-12 text-sm"
+                              className="pl-10 h-12 text-sm text-white placeholder:text-white/30"
+                              style={{
+                                background: 'rgba(255,255,255,0.08)',
+                                border: '1px solid rgba(255,255,255,0.12)',
+                              }}
                               {...field}
                             />
                           </div>
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-400" />
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={form.control}
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-700 font-medium">Senha</FormLabel>
+                        <FormLabel className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                          Senha
+                        </FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'rgba(255,255,255,0.35)' }} />
                             <Input
                               type="password"
                               placeholder="••••••••"
                               autoComplete="current-password"
-                              className="pl-10 h-12 text-sm"
+                              className="pl-10 h-12 text-sm text-white placeholder:text-white/30"
+                              style={{
+                                background: 'rgba(255,255,255,0.08)',
+                                border: '1px solid rgba(255,255,255,0.12)',
+                              }}
                               {...field}
                             />
                           </div>
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-400" />
                       </FormItem>
                     )}
                   />
 
                   <Button
                     type="submit"
-                    className="w-full h-12 font-bold text-base mt-2 rounded-xl"
+                    className="w-full h-12 font-bold text-base rounded-xl mt-2 border-0"
+                    style={{
+                      background: GOLD,
+                      color: NAVY,
+                      boxShadow: `0 4px 24px ${GOLD}55`,
+                    }}
                     disabled={loading}
                   >
                     {loading ? 'Entrando...' : 'Entrar'}
@@ -194,9 +258,8 @@ export function LoginPage() {
             </div>
           </div>
 
-          {/* Rodapé mobile */}
-          <p className="text-center text-xs mt-6 lg:hidden text-white/50">
-            © PS Control — Proteção &amp; Segurança
+          <p className="text-center text-xs mt-6" style={{ color: 'rgba(255,255,255,0.2)' }}>
+            © {new Date().getFullYear()} PS Control — Proteção &amp; Segurança
           </p>
         </div>
       </div>
