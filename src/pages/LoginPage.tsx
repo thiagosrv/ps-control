@@ -12,8 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Toaster } from '@/components/ui/sonner'
 
 const NAVY = 'oklch(0.188 0.075 262)'
-const NAVY_DARK = 'oklch(0.13 0.055 262)'
-const GOLD = 'oklch(0.838 0.176 86.4)'
+const GOLD  = 'oklch(0.838 0.176 86.4)'
 
 export function LoginPage() {
   const { signIn } = useAuth()
@@ -39,41 +38,39 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: `linear-gradient(160deg, ${NAVY} 0%, ${NAVY_DARK} 100%)` }}>
+    <div className="min-h-screen flex">
 
-      {/* ── LADO ESQUERDO — Hero ── */}
-      <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 xl:p-16 relative overflow-hidden">
+      {/* ── LADO ESQUERDO — Branco ── */}
+      <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 xl:p-16 bg-white relative overflow-hidden">
 
-        {/* Círculos decorativos de fundo */}
-        <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full opacity-10"
-          style={{ background: GOLD }} />
-        <div className="absolute top-20 -right-20 w-64 h-64 rounded-full opacity-5"
-          style={{ background: GOLD }} />
+        {/* Círculo decorativo sutil */}
+        <div className="absolute -bottom-40 -left-40 w-[480px] h-[480px] rounded-full opacity-[0.04]"
+          style={{ background: NAVY }} />
 
-        {/* Logo */}
         <div>
-          <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-2xl px-5 py-3 mb-16">
+          {/* Logo grande */}
+          <div className="mb-12">
             <img
               src="/logo.png"
               alt="PS Control"
-              className="h-12 w-auto object-contain"
+              className="h-48 w-auto object-contain"
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
             />
           </div>
 
           {/* Headline */}
-          <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight mb-4">
+          <h1 className="text-4xl xl:text-5xl font-bold leading-tight mb-4" style={{ color: NAVY }}>
             Controle de acesso<br />
             <span style={{ color: GOLD }}>inteligente</span> para<br />
             sua portaria.
           </h1>
-          <p className="text-lg leading-relaxed" style={{ color: 'oklch(0.75 0.03 264)' }}>
+          <p className="text-lg leading-relaxed text-slate-500">
             Registre visitas, gerencie entradas e saídas e mantenha a segurança do seu condomínio ou empresa em tempo real.
           </p>
         </div>
 
         {/* Features */}
-        <div className="space-y-4 relative z-10">
+        <div className="space-y-5 relative z-10">
           {[
             { icon: ShieldCheck, label: 'Controle total de visitantes', desc: 'Cadastro, histórico e blacklist integrados' },
             { icon: Clock,        label: 'Registro em tempo real',       desc: 'Entradas e saídas atualizadas na hora' },
@@ -81,40 +78,42 @@ export function LoginPage() {
           ].map(({ icon: Icon, label, desc }) => (
             <div key={label} className="flex items-start gap-4">
               <div className="flex items-center justify-center h-10 w-10 rounded-xl shrink-0"
-                style={{ backgroundColor: `${GOLD}22` }}>
+                style={{ backgroundColor: `${GOLD}28` }}>
                 <Icon className="h-5 w-5" style={{ color: GOLD }} />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">{label}</p>
-                <p className="text-xs" style={{ color: 'oklch(0.65 0.03 264)' }}>{desc}</p>
+                <p className="text-sm font-semibold" style={{ color: NAVY }}>{label}</p>
+                <p className="text-xs text-slate-400">{desc}</p>
               </div>
             </div>
           ))}
         </div>
 
         {/* Rodapé esquerdo */}
-        <p className="text-xs" style={{ color: 'oklch(0.45 0.03 264)' }}>
+        <p className="text-xs text-slate-300">
           © PS Control — Proteção &amp; Segurança
         </p>
       </div>
 
-      {/* ── LADO DIREITO — Formulário ── */}
-      <div className="flex flex-col items-center justify-center w-full lg:w-1/2 p-6 sm:p-10">
-
-        {/* Logo mobile (só aparece em telas < lg) */}
-        <div className="flex lg:hidden items-center gap-3 mb-10">
-          <div className="bg-white/10 rounded-xl px-4 py-2.5">
-            <img
-              src="/logo.png"
-              alt="PS Control"
-              className="h-10 w-auto object-contain"
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-            />
-          </div>
+      {/* ── LADO DIREITO — Degradê branco → navy ── */}
+      <div
+        className="flex flex-col items-center justify-center w-full lg:w-1/2 p-6 sm:p-10 relative"
+        style={{
+          background: `linear-gradient(to right, #ffffff 0%, oklch(0.188 0.075 262) 60%)`,
+        }}
+      >
+        {/* Logo mobile */}
+        <div className="flex lg:hidden mb-10">
+          <img
+            src="/logo.png"
+            alt="PS Control"
+            className="h-24 w-auto object-contain"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+          />
         </div>
 
-        {/* Card */}
-        <div className="w-full max-w-md">
+        {/* Card de login */}
+        <div className="w-full max-w-md relative z-10">
           <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
             {/* Barra dourada */}
             <div className="h-1.5 w-full" style={{ background: GOLD }} />
@@ -196,7 +195,7 @@ export function LoginPage() {
           </div>
 
           {/* Rodapé mobile */}
-          <p className="text-center text-xs mt-6 lg:hidden" style={{ color: 'oklch(0.55 0.03 264)' }}>
+          <p className="text-center text-xs mt-6 lg:hidden text-white/50">
             © PS Control — Proteção &amp; Segurança
           </p>
         </div>
