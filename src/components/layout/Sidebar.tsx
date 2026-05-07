@@ -104,8 +104,24 @@ export function Sidebar({ onSignOut, companyName, open, onClose }: Props) {
         ))}
       </nav>
 
+      {/* Quadro cliente */}
+      <div className="px-3 pb-3">
+        <div className="rounded-xl bg-white p-3">
+          <p className="text-center leading-tight mb-2.5" style={{ fontSize: '0.6rem', color: 'oklch(0.45 0.03 264)' }}>
+            Criado e Desenvolvido por<br />
+            <span className="font-bold" style={{ color: 'oklch(0.188 0.075 262)' }}>PS PROTEÇÃO</span>, para:
+          </p>
+          <img
+            src="/cliente1.png"
+            alt="Cliente"
+            className="w-full h-12 object-contain"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+          />
+        </div>
+      </div>
+
       {/* Sair */}
-      <div className="px-3 py-4 border-t" style={{ borderColor: 'oklch(0.255 0.065 262)' }}>
+      <div className="px-3 py-3 border-t" style={{ borderColor: 'oklch(0.255 0.065 262)' }}>
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/10"
