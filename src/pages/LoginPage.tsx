@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { AlertCircle, Lock, User, ShieldCheck, Clock, FileText } from 'lucide-react'
+import { AlertCircle, Lock, User, Eye, EyeOff, ShieldCheck, Clock, FileText } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { loginSchema, type LoginFormValues } from '@/lib/validators'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -19,6 +19,7 @@ export function LoginPage() {
   const navigate = useNavigate()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -226,16 +227,29 @@ export function LoginPage() {
                           <div className="relative">
                             <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'rgba(255,255,255,0.35)' }} />
                             <Input
-                              type="password"
+                              type={showPassword ? 'text' : 'password'}
                               placeholder="••••••••"
                               autoComplete="current-password"
-                              className="pl-10 h-12 text-sm text-white placeholder:text-white/30"
+                              className="pl-10 pr-11 h-12 text-sm text-white placeholder:text-white/30"
                               style={{
                                 background: 'rgba(255,255,255,0.08)',
                                 border: '1px solid rgba(255,255,255,0.12)',
                               }}
                               {...field}
                             />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(v => !v)}
+                              className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-100"
+                              style={{ color: 'rgba(255,255,255,0.4)' }}
+                              tabIndex={-1}
+                              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                            >
+                              {showPassword
+                                ? <EyeOff className="h-4 w-4" />
+                                : <Eye className="h-4 w-4" />
+                              }
+                            </button>
                           </div>
                         </FormControl>
                         <FormMessage className="text-red-400" />
