@@ -46,7 +46,9 @@ export function useAuth() {
     await fetchProfile(session.user.id)
   }
 
-  async function signIn(email: string, password: string) {
+  // Converte username → email interno (ex: "psgestao" → "psgestao@pscontrol.app")
+  async function signIn(username: string, password: string) {
+    const email = username.includes('@') ? username : `${username.toLowerCase().trim()}@pscontrol.app`
     return supabase.auth.signInWithPassword({ email, password })
   }
 

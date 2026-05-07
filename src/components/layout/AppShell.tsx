@@ -29,6 +29,7 @@ export function AppShell() {
       <Sidebar
         onSignOut={handleSignOut}
         companyName={profile?.company_name}
+        role={profile?.role}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />

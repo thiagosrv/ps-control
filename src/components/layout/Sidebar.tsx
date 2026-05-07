@@ -14,29 +14,32 @@ import {
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
-const navItems = [
-  { label: 'Dashboard', to: '/', icon: LayoutDashboard, end: true },
-  { label: 'Departamentos', to: '/departments', icon: Building2 },
-  { label: 'Usuários', to: '/users', icon: Users },
-  { label: 'Visitas', to: '/visits', icon: ClipboardList },
-  { label: 'Veículos', to: '/vehicles', icon: Car },
-  { label: 'Relatórios', to: '/reports', icon: FileText },
-  { label: 'Configurações', to: '/settings', icon: Settings },
+const ALL_NAV_ITEMS = [
+  { label: 'Dashboard',     to: '/',            icon: LayoutDashboard, end: true,  adminOnly: false },
+  { label: 'Visitas',       to: '/visits',      icon: ClipboardList,   end: false, adminOnly: false },
+  { label: 'Relatórios',    to: '/reports',     icon: FileText,        end: false, adminOnly: false },
+  { label: 'Departamentos', to: '/departments', icon: Building2,       end: false, adminOnly: true  },
+  { label: 'Usuários',      to: '/users',       icon: Users,           end: false, adminOnly: true  },
+  { label: 'Veículos',      to: '/vehicles',    icon: Car,             end: false, adminOnly: true  },
+  { label: 'Configurações', to: '/settings',    icon: Settings,        end: false, adminOnly: true  },
 ]
 
 interface Props {
   onSignOut: () => void
   companyName?: string | null
+  role?: 'admin' | 'operator' | null
   open: boolean
   onClose: () => void
 }
 
-export function Sidebar({ onSignOut, companyName, open, onClose }: Props) {
+export function Sidebar({ onSignOut, companyName, role, open, onClose }: Props) {
   const location = useLocation()
 
   useEffect(() => {
     onClose()
   }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const navItems = ALL_NAV_ITEMS.filter(item => !item.adminOnly || role === 'admin')
 
   return (
     <aside
@@ -74,8 +77,24 @@ export function Sidebar({ onSignOut, companyName, open, onClose }: Props) {
         </button>
       </div>
 
+      {/* Badge de papel */}
+      {role && (
+        <div className="px-4 pt-3 pb-1">
+          <span
+            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
+            style={
+              role === 'admin'
+                ? { backgroundColor: 'oklch(0.838 0.176 86.4)', color: 'oklch(0.188 0.075 262)' }
+                : { backgroundColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }
+            }
+          >
+            {role === 'admin' ? '⚙ Administrador' : '🔒 Porteiro'}
+          </span>
+        </div>
+      )}
+
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
         {navItems.map(({ label, to, icon: Icon, end }) => (
           <NavLink
             key={to}
@@ -91,7 +110,7 @@ export function Sidebar({ onSignOut, companyName, open, onClose }: Props) {
             }
             style={({ isActive }) => isActive
               ? { backgroundColor: 'oklch(0.838 0.176 86.4)' }
-              : { }
+              : {}
             }
           >
             {({ isActive }) => (

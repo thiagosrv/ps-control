@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { AlertCircle, Lock, Mail, ShieldCheck, Clock, FileText } from 'lucide-react'
+import { AlertCircle, Lock, User, ShieldCheck, Clock, FileText } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { loginSchema, type LoginFormValues } from '@/lib/validators'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -28,9 +28,9 @@ export function LoginPage() {
   async function onSubmit(values: LoginFormValues) {
     setError('')
     setLoading(true)
-    const { error } = await signIn(values.email, values.password)
+    const { error } = await signIn(values.username, values.password)
     if (error) {
-      setError('E-mail ou senha incorretos. Tente novamente.')
+      setError('Usuário ou senha incorretos. Tente novamente.')
     } else {
       navigate('/')
     }
@@ -185,19 +185,21 @@ export function LoginPage() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                   <FormField
                     control={form.control}
-                    name="email"
+                    name="username"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                          E-mail
+                          Usuário
                         </FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'rgba(255,255,255,0.35)' }} />
+                            <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'rgba(255,255,255,0.35)' }} />
                             <Input
-                              type="email"
-                              placeholder="porteiro@empresa.com"
+                              type="text"
+                              placeholder="seu usuário"
                               autoComplete="username"
+                              autoCapitalize="none"
+                              spellCheck={false}
                               className="pl-10 h-12 text-sm text-white placeholder:text-white/30"
                               style={{
                                 background: 'rgba(255,255,255,0.08)',

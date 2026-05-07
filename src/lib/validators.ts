@@ -69,7 +69,10 @@ export const settingsSchema = z.object({
 export type SettingsFormValues = z.infer<typeof settingsSchema>
 
 export const loginSchema = z.object({
-  email: z.string().email('E-mail inválido'),
+  username: z
+    .string()
+    .min(3, 'Usuário deve ter ao menos 3 caracteres')
+    .regex(/^\S+$/, 'Usuário não pode conter espaços'),
   password: z.string().min(1, 'Senha obrigatória'),
 })
 
