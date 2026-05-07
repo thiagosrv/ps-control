@@ -42,20 +42,18 @@ export function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <img
-            src="/logo.png"
-            alt="PS Control"
-            className="h-24 w-auto mb-4 object-contain"
-            style={{ mixBlendMode: 'screen' }}
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-          />
-          {/* Fallback se logo não carregar */}
-          <div className="text-center">
-            <p className="text-xs tracking-[0.25em] uppercase font-medium mt-1"
-              style={{ color: 'oklch(0.838 0.176 86.4)' }}>
-              Segurança &amp; Controle de Acesso
-            </p>
+          <div className="bg-white rounded-2xl shadow-lg px-8 py-5 mb-5 flex items-center justify-center">
+            <img
+              src="/logo.png"
+              alt="PS Control"
+              className="h-20 w-auto object-contain"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+            />
           </div>
+          <p className="text-xs tracking-[0.25em] uppercase font-semibold"
+            style={{ color: 'oklch(0.838 0.176 86.4)' }}>
+            Segurança &amp; Controle de Acesso
+          </p>
         </div>
 
         {/* Card de login */}
