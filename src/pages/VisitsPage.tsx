@@ -37,7 +37,6 @@ export function VisitsPage() {
 
   const [userQuery, setUserQuery] = useState('')
   const [userResults, setUserResults] = useState<CompanyUser[]>([])
-  const [selectedUser, setSelectedUser] = useState<CompanyUser | null>(null)
   const [showUserDropdown, setShowUserDropdown] = useState(false)
 
   const [submitting, setSubmitting] = useState(false)
@@ -74,7 +73,7 @@ export function VisitsPage() {
 
   function handleUserSearch(value: string) {
     setUserQuery(value)
-    if (!value) { setSelectedUser(null); form.setValue('company_user_id', ''); return }
+    if (!value) { form.setValue('company_user_id', ''); return }
     clearTimeout(userTimerRef.current)
     if (value.length < 3) { setUserResults([]); setShowUserDropdown(false); return }
     userTimerRef.current = setTimeout(async () => {
@@ -115,7 +114,6 @@ export function VisitsPage() {
   }
 
   function selectUser(user: CompanyUser) {
-    setSelectedUser(user)
     setUserQuery(user.full_name)
     setShowUserDropdown(false)
     form.setValue('company_user_id', user.id)
@@ -133,7 +131,6 @@ export function VisitsPage() {
       epi_verificado: false,
     })
     setSelectedVisitor(null)
-    setSelectedUser(null)
     setQuickQuery('')
     setUserQuery('')
   }, [form])

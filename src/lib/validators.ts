@@ -8,7 +8,7 @@ export const visitFormSchema = z.object({
   company_user_id: z.string().optional(),
   atividade: z.string().min(3, 'Informe a atividade do dia'),
   vehicle_plate: z.string().optional(),
-  epi_verificado: z.boolean().default(false),
+  epi_verificado: z.boolean(),
 })
 
 export type VisitFormValues = z.infer<typeof visitFormSchema>
@@ -64,6 +64,7 @@ export type ChangePasswordValues = z.infer<typeof changePasswordSchema>
 export const reportFilterSchema = z.object({
   name: z.string().optional(),
   cpf: z.string().optional(),
+  rg: z.string().optional(),
   funcao: z.string().optional(),
   empreiteira_id: z.string().optional(),
   plate: z.string().optional(),

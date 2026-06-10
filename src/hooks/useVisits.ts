@@ -6,7 +6,7 @@ import { unformatCPF } from '@/lib/utils'
 
 const VISIT_SELECT = `
   *,
-  visitor:visitors(*, empreiteira:empreiteiras(id, razao_social)),
+  visitor:visitors(*, empreiteira:empreiteiras(*)),
   company_user:company_users(*, department:departments(id, name, description, created_at))
 `
 
@@ -163,7 +163,7 @@ export function useVisitorSearch() {
       : `full_name.ilike.%${query}%`
     const { data } = await supabase
       .from('visitors')
-      .select('*, empreiteira:empreiteiras(id, razao_social)')
+      .select('*, empreiteira:empreiteiras(*)')
       .or(filter)
       .limit(8)
     return (data as Visitor[]) ?? []
