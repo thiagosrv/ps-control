@@ -6,15 +6,15 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
   Search, UserCheck, LogOut, AlertCircle, Printer, ClipboardList,
-  X, ShieldCheck, HardHat, Package, User, Building2,
+  X, ShieldCheck, HardHat, Package, User, Building2, Camera,
 } from 'lucide-react'
 import { useVisits, useVisitorSearch } from '@/hooks/useVisits'
+import { useVisitPhotos } from '@/hooks/useVisitPhotos'
 import { useCompanyUsers } from '@/hooks/useCompanyUsers'
 import { useEmpreiteiras } from '@/hooks/useEmpreiteiras'
 import { visitFormSchema, type VisitFormValues } from '@/lib/validators'
 import { FUNCOES_OBRA } from '@/lib/utils'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -48,6 +48,7 @@ const EMPTY_FORM: VisitFormValues = {
 
 export function VisitsPage() {
   const { activeVisits, loading: visitsLoading, createVisit, endVisit } = useVisits()
+  const { uploadPhoto } = useVisitPhotos()
   const { search: searchUsers } = useCompanyUsers()
   const { searchVisitors } = useVisitorSearch()
   const { empreiteiras } = useEmpreiteiras()
@@ -64,6 +65,12 @@ export function VisitsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [endTarget, setEndTarget] = useState<Visit | null>(null)
   const [printVisit, setPrintVisit] = useState<Visit | null>(null)
+  const [entryPhoto, setEntryPhoto] = useState<File | null>(null)
+  const [entryPhotoPreview, setEntryPhotoPreview] = useState<string | null>(null)
+  const [exitPhoto, setExitPhoto] = useState<File | null>(null)
+  const [exitPhotoPreview, setExitPhotoPreview] = useState<string | null>(null)
+  const entryPhotoRef = useRef<HTMLInputElement>(null)
+  const exitPhotoRef = useRef<HTMLInputElement>(null)
 
   const quickTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const userTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -142,11 +149,40 @@ export function VisitsPage() {
     setUserQuery('')
   }
 
+  function handleEntryPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setEntryPhoto(file)
+    setEntryPhotoPreview(URL.createObjectURL(file))
+  }
+
+  function clearEntryPhoto() {
+    setEntryPhoto(null)
+    setEntryPhotoPreview(null)
+    if (entryPhotoRef.current) entryPhotoRef.current.value = ''
+  }
+
+  function handleExitPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setExitPhoto(file)
+    setExitPhotoPreview(URL.createObjectURL(file))
+  }
+
+  function clearExitPhoto() {
+    setExitPhoto(null)
+    setExitPhotoPreview(null)
+    if (exitPhotoRef.current) exitPhotoRef.current.value = ''
+  }
+
   const resetForm = useCallback(() => {
     form.reset(EMPTY_FORM)
     setSelectedVisitor(null)
     setQuickQuery('')
     setUserQuery('')
+    setEntryPhoto(null)
+    setEntryPhotoPreview(null)
+    if (entryPhotoRef.current) entryPhotoRef.current.value = ''
   }, [form])
 
   // ── Submit ────────────────────────────────────────────────────
@@ -158,11 +194,17 @@ export function VisitsPage() {
       return
     }
     setSubmitting(true)
-    const { error } = await createVisit(values, selectedVisitor?.id)
+    const { error, visitId } = await createVisit(values, selectedVisitor?.id)
     if (error) {
       toast.error('Erro ao registrar: ' + (error as { message?: string }).message)
     } else {
-      toast.success('Entrada registrada!')
+      if (entryPhoto && visitId) {
+        const { error: photoErr } = await uploadPhoto(visitId, entryPhoto, 'entrada')
+        if (photoErr) toast.error('Entrada registrada, mas erro ao salvar foto.')
+        else toast.success('Entrada registrada com foto!')
+      } else {
+        toast.success('Entrada registrada!')
+      }
       resetForm()
     }
     setSubmitting(false)
@@ -171,8 +213,18 @@ export function VisitsPage() {
   async function handleEndVisit() {
     if (!endTarget) return
     const error = await endVisit(endTarget.id)
-    if (error) toast.error('Erro ao encerrar')
-    else toast.success('Saída registrada')
+    if (error) {
+      toast.error('Erro ao encerrar')
+    } else {
+      if (exitPhoto) {
+        const { error: photoErr } = await uploadPhoto(endTarget.id, exitPhoto, 'saida')
+        if (photoErr) toast.error('Saída registrada, mas erro ao salvar foto.')
+        else toast.success('Saída registrada com foto!')
+      } else {
+        toast.success('Saída registrada')
+      }
+    }
+    clearExitPhoto()
     setEndTarget(null)
   }
 
@@ -496,6 +548,48 @@ export function VisitsPage() {
                 )} />
               )}
 
+              {/* Foto de evidência de entrada */}
+              <div className="border-t pt-4">
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
+                  <Camera className="h-3.5 w-3.5" />
+                  Foto de Evidência <span className="font-normal normal-case tracking-normal">(opcional)</span>
+                </p>
+                <input
+                  ref={entryPhotoRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleEntryPhotoChange}
+                />
+                {entryPhotoPreview ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={entryPhotoPreview}
+                      alt="Preview"
+                      className="h-24 w-24 object-cover rounded-xl border-2 shadow-sm"
+                      style={{ borderColor: GOLD }}
+                    />
+                    <button
+                      type="button"
+                      onClick={clearEntryPhoto}
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => entryPhotoRef.current?.click()}
+                    className="flex items-center gap-3 h-12 px-4 rounded-xl border-2 border-dashed text-sm font-medium transition-colors hover:border-slate-400"
+                    style={{ borderColor: 'oklch(0.85 0.008 264)', color: 'oklch(0.55 0.015 264)' }}
+                  >
+                    <Camera className="h-5 w-5" />
+                    Tirar foto / Selecionar imagem
+                  </button>
+                )}
+              </div>
+
               <div className="flex justify-end pt-1">
                 <Button
                   type="submit"
@@ -690,14 +784,80 @@ export function VisitsPage() {
         </div>
       </div>
 
-      <ConfirmDialog
-        open={!!endTarget}
-        title="Registrar saída"
-        description={`Confirma a saída de "${endTarget?.visitor?.full_name}"?`}
-        confirmLabel="Confirmar saída"
-        onConfirm={handleEndVisit}
-        onCancel={() => setEndTarget(null)}
-      />
+      {/* Dialog de saída com foto opcional */}
+      {endTarget && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/50"
+            onClick={() => { setEndTarget(null); clearExitPhoto() }}
+          />
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-2xl w-[calc(100vw-2rem)] max-w-sm p-6">
+            <h3 className="text-base font-bold mb-1" style={{ color: NAVY }}>Registrar saída</h3>
+            <p className="text-sm text-slate-500 mb-5">
+              Saída de <strong>{endTarget.visitor?.full_name}</strong>?
+            </p>
+
+            {/* Foto de saída */}
+            <div className="mb-5">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
+                <Camera className="h-3.5 w-3.5" />
+                Foto de saída <span className="font-normal normal-case tracking-normal">(opcional)</span>
+              </p>
+              <input
+                ref={exitPhotoRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleExitPhotoChange}
+              />
+              {exitPhotoPreview ? (
+                <div className="relative inline-block">
+                  <img
+                    src={exitPhotoPreview}
+                    alt="Preview saída"
+                    className="h-20 w-20 object-cover rounded-xl border-2 shadow-sm"
+                    style={{ borderColor: GOLD }}
+                  />
+                  <button
+                    type="button"
+                    onClick={clearExitPhoto}
+                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => exitPhotoRef.current?.click()}
+                  className="flex items-center gap-2 h-11 px-4 rounded-xl border-2 border-dashed text-sm font-medium w-full transition-colors hover:border-slate-400"
+                  style={{ borderColor: 'oklch(0.85 0.008 264)', color: 'oklch(0.55 0.015 264)' }}
+                >
+                  <Camera className="h-4 w-4" />
+                  Tirar foto / Selecionar imagem
+                </button>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => { setEndTarget(null); clearExitPhoto() }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1 font-bold"
+                style={{ backgroundColor: 'oklch(0.5 0.18 25)' }}
+                onClick={handleEndVisit}
+              >
+                Confirmar saída
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Crachá para impressão */}
       {printVisit && (

@@ -81,6 +81,27 @@ export interface Visit {
   company_user?: CompanyUser & { department?: Department }
 }
 
+export interface VisitPhoto {
+  id: string
+  visit_id: string
+  photo_url: string
+  tipo: 'entrada' | 'saida'
+  created_at: string
+  visit?: {
+    id: string
+    checked_in_at: string
+    checked_out_at: string | null
+    status: string
+    visitor?: {
+      full_name: string
+      cpf: string | null
+      rg: string | null
+      funcao: string | null
+      empreiteira?: { razao_social: string } | null
+    }
+  }
+}
+
 export interface DashboardStats {
   activeVisits: number
   todayEntries: number

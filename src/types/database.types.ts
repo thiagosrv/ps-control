@@ -57,6 +57,28 @@ export interface Database {
         }
         Relationships: []
       }
+      visit_photos: {
+        Row: {
+          id: string
+          visit_id: string
+          photo_url: string
+          tipo: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          visit_id: string
+          photo_url: string
+          tipo?: string
+        }
+        Update: {
+          photo_url?: string
+          tipo?: string
+        }
+        Relationships: [
+          { foreignKeyName: 'visit_photos_visit_id_fkey'; columns: ['visit_id']; referencedRelation: 'visits'; referencedColumns: ['id'] }
+        ]
+      }
       empreiteiras: {
         Row: {
           id: string

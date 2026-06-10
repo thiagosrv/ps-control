@@ -11,6 +11,7 @@ import {
   LogOut,
   X,
   HardHat,
+  Camera,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -23,6 +24,7 @@ const ALL_NAV_ITEMS = [
   { label: 'Responsáveis',   to: '/responsaveis', icon: Users,           end: false, adminOnly: true  },
   { label: 'Empreiteiras',   to: '/empreiteiras', icon: Building2,       end: false, adminOnly: true  },
   { label: 'Veículos',       to: '/vehicles',     icon: Car,             end: false, adminOnly: true  },
+  { label: 'Evidências',     to: '/evidencias',   icon: Camera,          end: false, adminOnly: true  },
   { label: 'Configurações',  to: '/settings',     icon: Settings,        end: false, adminOnly: true  },
 ]
 

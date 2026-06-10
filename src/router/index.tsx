@@ -10,6 +10,7 @@ import { VisitsPage } from '@/pages/VisitsPage'
 import { VehiclesPage } from '@/pages/VehiclesPage'
 import { ReportsPage } from '@/pages/ReportsPage'
 import { SettingsPage } from '@/pages/SettingsPage'
+import { EvidenciasPage } from '@/pages/EvidenciasPage'
 
 function LoadingSpinner() {
   return (
@@ -58,6 +59,7 @@ export const router = createBrowserRouter([
       { path: 'responsaveis',   element: <AdminRoute><CompanyUsersPage /></AdminRoute> },
       { path: 'empreiteiras',   element: <AdminRoute><EmpreiteirasPage /></AdminRoute> },
       { path: 'vehicles',       element: <AdminRoute><VehiclesPage /></AdminRoute> },
+      { path: 'evidencias',     element: <AdminRoute><EvidenciasPage /></AdminRoute> },
       { path: 'settings',       element: <AdminRoute><SettingsPage /></AdminRoute> },
 
       // Compatibilidade com rotas antigas

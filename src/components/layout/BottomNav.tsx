@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, ClipboardList, FileText, Settings,
-  HardHat, Users, Building2, Car, LogOut, X,
+  HardHat, Users, Building2, Car, Camera, LogOut, X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -20,6 +20,7 @@ const ADMIN_ITEMS = [
   { to: '/responsaveis', label: 'Responsáveis',    icon: Users     },
   { to: '/empreiteiras', label: 'Empreiteiras',    icon: Building2 },
   { to: '/vehicles',     label: 'Veículos',         icon: Car       },
+  { to: '/evidencias',   label: 'Evidências',       icon: Camera    },
   { to: '/settings',     label: 'Configurações',    icon: Settings  },
 ]
 
