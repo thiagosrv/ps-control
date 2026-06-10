@@ -10,7 +10,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['logo.png', 'favicon.svg', 'cliente1.png'],
+      includeAssets: ['logo.png', 'logotipo-ps-control.png', 'favicon-32.png', 'cliente1.png'],
       manifest: {
         name: 'PS Control — Portaria',
         short_name: 'PS Control',
