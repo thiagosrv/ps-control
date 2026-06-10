@@ -487,51 +487,84 @@ export function VisitsPage() {
 
               {/* ── VISITANTE ── */}
               {visitType === 'visitor' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="visitor_company" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-semibold text-slate-700">Empresa</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                          <Input placeholder="Empresa do visitante" className="h-12 pl-9" {...field} />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={form.control} name="company_user_id" render={() => (
-                    <FormItem>
-                      <FormLabel className="font-semibold text-slate-700">Pessoa a visitar</FormLabel>
-                      <div className="relative">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                          <Input
-                            placeholder="Buscar responsável…"
-                            className="h-12 pl-9"
-                            value={userQuery}
-                            onChange={(e) => handleUserSearch(e.target.value)}
-                            onFocus={() => userResults.length > 0 && setShowUserDropdown(true)}
-                            onBlur={() => setTimeout(() => setShowUserDropdown(false), 150)}
-                          />
-                        </div>
-                        {showUserDropdown && userResults.length > 0 && (
-                          <div className="absolute top-full left-0 right-0 z-50 bg-white border rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
-                            {userResults.map((u) => (
-                              <button key={u.id} type="button"
-                                className="w-full flex flex-col px-4 py-2.5 text-left hover:bg-yellow-50 border-b last:border-0"
-                                onClick={() => selectUser(u)}>
-                                <p className="text-sm font-semibold text-slate-800">{u.full_name}</p>
-                                <p className="text-xs text-slate-500">{u.department?.name ?? '—'}</p>
-                              </button>
-                            ))}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="visitor_company" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-semibold text-slate-700">Empresa</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <Input placeholder="Empresa do visitante" className="h-12 pl-9" {...field} />
                           </div>
-                        )}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+
+                    <FormField control={form.control} name="company_user_id" render={() => (
+                      <FormItem>
+                        <FormLabel className="font-semibold text-slate-700">Pessoa a visitar</FormLabel>
+                        <div className="relative">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <Input
+                              placeholder="Buscar responsável…"
+                              className="h-12 pl-9"
+                              value={userQuery}
+                              onChange={(e) => handleUserSearch(e.target.value)}
+                              onFocus={() => userResults.length > 0 && setShowUserDropdown(true)}
+                              onBlur={() => setTimeout(() => setShowUserDropdown(false), 150)}
+                            />
+                          </div>
+                          {showUserDropdown && userResults.length > 0 && (
+                            <div className="absolute top-full left-0 right-0 z-50 bg-white border rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
+                              {userResults.map((u) => (
+                                <button key={u.id} type="button"
+                                  className="w-full flex flex-col px-4 py-2.5 text-left hover:bg-yellow-50 border-b last:border-0"
+                                  onClick={() => selectUser(u)}>
+                                  <p className="text-sm font-semibold text-slate-800">{u.full_name}</p>
+                                  <p className="text-xs text-slate-500">{u.department?.name ?? '—'}</p>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="atividade" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-semibold text-slate-700">
+                          Motivo da visita <span className="font-normal text-slate-400">(opcional)</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Reunião, Vistoria, Entrega…" className="h-12" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+
+                    <FormField control={form.control} name="vehicle_plate" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-semibold text-slate-700">
+                          Placa do veículo <span className="font-normal text-slate-400">(opcional)</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="ABC1D23"
+                            className="h-12 font-mono uppercase"
+                            {...field}
+                            onChange={(e) => field.onChange(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
                 </div>
               )}
 
