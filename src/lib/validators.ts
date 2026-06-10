@@ -3,10 +3,12 @@ import { z } from 'zod'
 export const visitFormSchema = z.object({
   visitor_name: z.string().min(3, 'Nome deve ter ao menos 3 caracteres'),
   documento: z.string().optional(),
-  visitor_company: z.string().optional(),
-  company_user_id: z.string().min(1, 'Selecione quem será visitado'),
-  purpose: z.string().min(3, 'Informe o motivo da visita'),
+  funcao: z.string().optional(),
+  empreiteira_id: z.string().optional(),
+  company_user_id: z.string().optional(),
+  atividade: z.string().min(3, 'Informe a atividade do dia'),
   vehicle_plate: z.string().optional(),
+  epi_verificado: z.boolean().default(false),
 })
 
 export type VisitFormValues = z.infer<typeof visitFormSchema>
@@ -17,6 +19,15 @@ export const departmentSchema = z.object({
 })
 
 export type DepartmentFormValues = z.infer<typeof departmentSchema>
+
+export const empreiteiraSchema = z.object({
+  razao_social: z.string().min(2, 'Razão social deve ter ao menos 2 caracteres'),
+  cnpj: z.string().optional(),
+  contato: z.string().optional(),
+  active: z.boolean(),
+})
+
+export type EmpreiteiraFormValues = z.infer<typeof empreiteiraSchema>
 
 export const companyUserSchema = z.object({
   full_name: z.string().min(3, 'Nome deve ter ao menos 3 caracteres'),
@@ -53,7 +64,8 @@ export type ChangePasswordValues = z.infer<typeof changePasswordSchema>
 export const reportFilterSchema = z.object({
   name: z.string().optional(),
   cpf: z.string().optional(),
-  rg: z.string().optional(),
+  funcao: z.string().optional(),
+  empreiteira_id: z.string().optional(),
   plate: z.string().optional(),
   visitor_type: z.enum(['employee', 'supplier', 'contractor', 'other', 'all', '']).optional(),
   date_from: z.string().optional(),

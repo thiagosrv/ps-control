@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, Users } from 'lucide-react'
+import { Plus, Pencil, Trash2, HardHat } from 'lucide-react'
 import { useCompanyUsers } from '@/hooks/useCompanyUsers'
 import { useDepartments } from '@/hooks/useDepartments'
 import { companyUserSchema, type CompanyUserFormValues } from '@/lib/validators'
@@ -56,7 +56,7 @@ export function CompanyUsersPage() {
     if (error) {
       toast.error('Erro ao salvar: ' + (error as { message?: string }).message)
     } else {
-      toast.success(editing ? 'Usuário atualizado' : 'Usuário criado')
+      toast.success(editing ? 'Responsável atualizado' : 'Responsável criado')
       setDialogOpen(false)
     }
     setSaving(false)
@@ -67,7 +67,7 @@ export function CompanyUsersPage() {
     setSaving(true)
     const error = await remove(deleteTarget.id)
     if (error) toast.error('Erro ao excluir')
-    else toast.success('Usuário excluído')
+    else toast.success('Responsável excluído')
     setDeleteTarget(null)
     setSaving(false)
   }
@@ -80,13 +80,12 @@ export function CompanyUsersPage() {
     { key: 'full_name', label: 'Nome' },
     {
       key: 'department',
-      label: 'Departamento',
+      label: 'Frente de Obra',
       render: (row) => {
         const u = row as unknown as CompanyUser
         return u.department?.name ?? '—'
       },
     },
-    { key: 'ramal', label: 'Ramal', render: (row) => (row.ramal as string) || '—' },
     { key: 'phone', label: 'Telefone', render: (row) => (row.phone as string) || '—' },
     {
       key: 'active',
@@ -117,12 +116,12 @@ export function CompanyUsersPage() {
   return (
     <div>
       <PageHeader
-        title="Usuários Internos"
-        description="Funcionários que podem receber visitantes"
+        title="Responsáveis / Encarregados"
+        description="Profissionais responsáveis pelas frentes de obra"
         action={
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4 mr-2" />
-            Novo Usuário
+            Novo Responsável
           </Button>
         }
       />
@@ -147,8 +146,8 @@ export function CompanyUsersPage() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              {editing ? 'Editar Usuário' : 'Novo Usuário'}
+              <HardHat className="h-5 w-5" />
+              {editing ? 'Editar Responsável' : 'Novo Responsável'}
             </DialogTitle>
           </DialogHeader>
           <Form {...form}>
@@ -163,7 +162,7 @@ export function CompanyUsersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="department_id" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Departamento</FormLabel>
+                    <FormLabel>Frente de Obra</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
@@ -177,15 +176,6 @@ export function CompanyUsersPage() {
                     <FormMessage />
                   </FormItem>
                 )} />
-                <FormField control={form.control} name="ramal" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ramal</FormLabel>
-                    <FormControl><Input placeholder="Ex: 1234" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="phone" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Telefone</FormLabel>
@@ -193,20 +183,20 @@ export function CompanyUsersPage() {
                     <FormMessage />
                   </FormItem>
                 )} />
-                <FormField control={form.control} name="email" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>E-mail</FormLabel>
-                    <FormControl><Input type="email" placeholder="joao@empresa.com" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
               </div>
+              <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>E-mail</FormLabel>
+                  <FormControl><Input type="email" placeholder="encarregado@obra.com" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
               <FormField control={form.control} name="active" render={({ field }) => (
                 <FormItem className="flex items-center gap-3">
                   <FormControl>
                     <input type="checkbox" checked={field.value} onChange={field.onChange} className="h-4 w-4 accent-blue-600" />
                   </FormControl>
-                  <FormLabel className="!mt-0">Usuário ativo</FormLabel>
+                  <FormLabel className="!mt-0">Responsável ativo</FormLabel>
                 </FormItem>
               )} />
               <div className="flex justify-end gap-2 pt-2">
@@ -220,7 +210,7 @@ export function CompanyUsersPage() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="Excluir usuário"
+        title="Excluir responsável"
         description={`Tem certeza que deseja excluir "${deleteTarget?.full_name}"?`}
         confirmLabel="Excluir"
         variant="danger"

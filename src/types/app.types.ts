@@ -19,6 +19,15 @@ export interface Department {
   created_at: string
 }
 
+export interface Empreiteira {
+  id: string
+  razao_social: string
+  cnpj: string | null
+  contato: string | null
+  active: boolean
+  created_at: string
+}
+
 export interface CompanyUser {
   id: string
   full_name: string
@@ -37,6 +46,11 @@ export interface Visitor {
   rg: string | null
   phone: string | null
   company: string | null
+  funcao: string | null
+  empreiteira_id: string | null
+  empreiteira?: Empreiteira
+  aso_validade: string | null
+  epi_ok: boolean
   blacklisted: boolean
   blacklist_reason: string | null
 }
@@ -55,6 +69,8 @@ export interface Visit {
   company_user_id: string | null
   visitor_type: VisitorType
   purpose: string | null
+  atividade: string | null
+  epi_verificado: boolean
   vehicle_plate: string | null
   status: VisitStatus
   checked_in_at: string

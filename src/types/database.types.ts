@@ -57,6 +57,31 @@ export interface Database {
         }
         Relationships: []
       }
+      empreiteiras: {
+        Row: {
+          id: string
+          razao_social: string
+          cnpj: string | null
+          contato: string | null
+          active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          razao_social: string
+          cnpj?: string | null
+          contato?: string | null
+          active?: boolean
+        }
+        Update: {
+          id?: string
+          razao_social?: string
+          cnpj?: string | null
+          contato?: string | null
+          active?: boolean
+        }
+        Relationships: []
+      }
       company_users: {
         Row: {
           id: string
@@ -99,6 +124,10 @@ export interface Database {
           rg: string | null
           phone: string | null
           company: string | null
+          funcao: string | null
+          empreiteira_id: string | null
+          aso_validade: string | null
+          epi_ok: boolean
           blacklisted: boolean
           blacklist_reason: string | null
           created_at: string
@@ -111,6 +140,10 @@ export interface Database {
           rg?: string | null
           phone?: string | null
           company?: string | null
+          funcao?: string | null
+          empreiteira_id?: string | null
+          aso_validade?: string | null
+          epi_ok?: boolean
           blacklisted?: boolean
           blacklist_reason?: string | null
         }
@@ -121,10 +154,16 @@ export interface Database {
           rg?: string | null
           phone?: string | null
           company?: string | null
+          funcao?: string | null
+          empreiteira_id?: string | null
+          aso_validade?: string | null
+          epi_ok?: boolean
           blacklisted?: boolean
           blacklist_reason?: string | null
         }
-        Relationships: []
+        Relationships: [
+          { foreignKeyName: 'visitors_empreiteira_id_fkey'; columns: ['empreiteira_id']; referencedRelation: 'empreiteiras'; referencedColumns: ['id'] }
+        ]
       }
       vehicles: {
         Row: {
@@ -158,6 +197,8 @@ export interface Database {
           company_user_id: string | null
           visitor_type: VisitorType
           purpose: string | null
+          atividade: string | null
+          epi_verificado: boolean
           vehicle_plate: string | null
           status: VisitStatus
           checked_in_at: string
@@ -173,6 +214,8 @@ export interface Database {
           company_user_id?: string | null
           visitor_type?: VisitorType
           purpose?: string | null
+          atividade?: string | null
+          epi_verificado?: boolean
           vehicle_plate?: string | null
           status?: VisitStatus
           checked_in_at?: string
@@ -186,6 +229,8 @@ export interface Database {
           company_user_id?: string | null
           visitor_type?: VisitorType
           purpose?: string | null
+          atividade?: string | null
+          epi_verificado?: boolean
           vehicle_plate?: string | null
           status?: VisitStatus
           checked_in_at?: string

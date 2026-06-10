@@ -6,7 +6,7 @@ import { unformatCPF } from '@/lib/utils'
 
 const VISIT_SELECT = `
   *,
-  visitor:visitors(*),
+  visitor:visitors(*, empreiteira:empreiteiras(id, razao_social)),
   company_user:company_users(*, department:departments(id, name, description, created_at))
 `
 
@@ -47,7 +47,8 @@ export function useVisits() {
         .insert({
           full_name: values.visitor_name,
           cpf: values.documento || null,
-          company: values.visitor_company || null,
+          funcao: values.funcao || null,
+          empreiteira_id: values.empreiteira_id || null,
         })
         .select()
         .single()
@@ -55,10 +56,12 @@ export function useVisits() {
       if (visitorError) return { error: visitorError as Error }
       visitorId = (visitor as Visitor).id
     } else {
-      // Atualiza empresa do visitante existente
       await supabase
         .from('visitors')
-        .update({ company: values.visitor_company || null })
+        .update({
+          funcao: values.funcao || null,
+          empreiteira_id: values.empreiteira_id || null,
+        })
         .eq('id', visitorId)
     }
 
@@ -66,7 +69,8 @@ export function useVisits() {
       visitor_id: visitorId,
       company_user_id: values.company_user_id || null,
       visitor_type: 'other',
-      purpose: values.purpose || null,
+      atividade: values.atividade || null,
+      epi_verificado: values.epi_verificado ?? false,
       vehicle_plate: values.vehicle_plate ? values.vehicle_plate.toUpperCase() : null,
       status: 'active',
     })
@@ -90,6 +94,8 @@ export function useVisits() {
     rg?: string
     plate?: string
     visitor_type?: string
+    funcao?: string
+    empreiteira_id?: string
     date_from?: string
     date_to?: string
   }) {
@@ -121,6 +127,13 @@ export function useVisits() {
       const q = filters.rg.toLowerCase()
       results = results.filter((v) => v.visitor?.rg?.toLowerCase().includes(q))
     }
+    if (filters.funcao) {
+      const q = filters.funcao.toLowerCase()
+      results = results.filter((v) => v.visitor?.funcao?.toLowerCase().includes(q))
+    }
+    if (filters.empreiteira_id) {
+      results = results.filter((v) => v.visitor?.empreiteira_id === filters.empreiteira_id)
+    }
 
     return { data: results, error: null }
   }
@@ -145,13 +158,12 @@ export function useVisitorSearch() {
   const searchVisitors = useCallback(async (query: string): Promise<Visitor[]> => {
     if (query.trim().length < 2) return []
     const clean = query.replace(/\D/g, '')
-    // Se parece numérico busca por documento, senão por nome
     const filter = clean.length >= 3
       ? `cpf.ilike.${clean}%,rg.ilike.${clean}%,full_name.ilike.%${query}%`
       : `full_name.ilike.%${query}%`
     const { data } = await supabase
       .from('visitors')
-      .select('*')
+      .select('*, empreiteira:empreiteiras(id, razao_social)')
       .or(filter)
       .limit(8)
     return (data as Visitor[]) ?? []

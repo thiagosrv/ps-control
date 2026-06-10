@@ -10,18 +10,20 @@ import {
   Settings,
   LogOut,
   X,
+  HardHat,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
 const ALL_NAV_ITEMS = [
-  { label: 'Dashboard',     to: '/',            icon: LayoutDashboard, end: true,  adminOnly: false },
-  { label: 'Visitas',       to: '/visits',      icon: ClipboardList,   end: false, adminOnly: false },
-  { label: 'Relatórios',    to: '/reports',     icon: FileText,        end: false, adminOnly: false },
-  { label: 'Departamentos', to: '/departments', icon: Building2,       end: false, adminOnly: true  },
-  { label: 'Usuários',      to: '/users',       icon: Users,           end: false, adminOnly: true  },
-  { label: 'Veículos',      to: '/vehicles',    icon: Car,             end: false, adminOnly: true  },
-  { label: 'Configurações', to: '/settings',    icon: Settings,        end: false, adminOnly: true  },
+  { label: 'Dashboard',      to: '/',             icon: LayoutDashboard, end: true,  adminOnly: false },
+  { label: 'Registros',      to: '/visits',       icon: ClipboardList,   end: false, adminOnly: false },
+  { label: 'Relatórios',     to: '/reports',      icon: FileText,        end: false, adminOnly: false },
+  { label: 'Frentes de Obra',to: '/frentes',      icon: HardHat,         end: false, adminOnly: true  },
+  { label: 'Responsáveis',   to: '/responsaveis', icon: Users,           end: false, adminOnly: true  },
+  { label: 'Empreiteiras',   to: '/empreiteiras', icon: Building2,       end: false, adminOnly: true  },
+  { label: 'Veículos',       to: '/vehicles',     icon: Car,             end: false, adminOnly: true  },
+  { label: 'Configurações',  to: '/settings',     icon: Settings,        end: false, adminOnly: true  },
 ]
 
 interface Props {

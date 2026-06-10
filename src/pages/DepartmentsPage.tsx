@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, Building2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, HardHat } from 'lucide-react'
 import { useDepartments } from '@/hooks/useDepartments'
 import { departmentSchema, type DepartmentFormValues } from '@/lib/validators'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -46,7 +46,7 @@ export function DepartmentsPage() {
     if (error) {
       toast.error('Erro ao salvar: ' + (error as { message?: string }).message)
     } else {
-      toast.success(editing ? 'Departamento atualizado' : 'Departamento criado')
+      toast.success(editing ? 'Frente atualizada' : 'Frente criada')
       setDialogOpen(false)
     }
     setSaving(false)
@@ -59,7 +59,7 @@ export function DepartmentsPage() {
     if (error) {
       toast.error('Erro ao excluir: ' + (error as { message?: string }).message)
     } else {
-      toast.success('Departamento excluído')
+      toast.success('Frente excluída')
     }
     setDeleteTarget(null)
     setSaving(false)
@@ -88,12 +88,12 @@ export function DepartmentsPage() {
   return (
     <div>
       <PageHeader
-        title="Departamentos"
-        description="Gerencie os departamentos da empresa"
+        title="Frentes de Obra"
+        description="Setores e frentes de trabalho da obra"
         action={
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4 mr-2" />
-            Novo Departamento
+            Nova Frente
           </Button>
         }
       />
@@ -109,8 +109,8 @@ export function DepartmentsPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              {editing ? 'Editar Departamento' : 'Novo Departamento'}
+              <HardHat className="h-5 w-5" />
+              {editing ? 'Editar Frente' : 'Nova Frente de Obra'}
             </DialogTitle>
           </DialogHeader>
           <Form {...form}>
@@ -118,7 +118,7 @@ export function DepartmentsPage() {
               <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nome *</FormLabel>
-                  <FormControl><Input placeholder="Ex: Recursos Humanos" {...field} /></FormControl>
+                  <FormControl><Input placeholder="Ex: Estrutura, Hidráulica, Elétrica..." {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -140,8 +140,8 @@ export function DepartmentsPage() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="Excluir departamento"
-        description={`Tem certeza que deseja excluir "${deleteTarget?.name}"? Esta ação não pode ser desfeita.`}
+        title="Excluir frente de obra"
+        description={`Tem certeza que deseja excluir "${deleteTarget?.name}"?`}
         confirmLabel="Excluir"
         variant="danger"
         loading={saving}
@@ -151,3 +151,5 @@ export function DepartmentsPage() {
     </div>
   )
 }
+
+export { DepartmentsPage as FrentesPage }

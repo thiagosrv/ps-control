@@ -1,13 +1,15 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Search, UserCheck, Phone, LogOut, AlertCircle, Printer, ClipboardList, Building2, X } from 'lucide-react'
+import { Search, UserCheck, LogOut, AlertCircle, Printer, ClipboardList, X, ShieldCheck } from 'lucide-react'
 import { useVisits, useVisitorSearch } from '@/hooks/useVisits'
 import { useCompanyUsers } from '@/hooks/useCompanyUsers'
+import { useEmpreiteiras } from '@/hooks/useEmpreiteiras'
 import { visitFormSchema, type VisitFormValues } from '@/lib/validators'
+import { FUNCOES_OBRA } from '@/lib/utils'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { Button } from '@/components/ui/button'
@@ -15,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { Visitor, CompanyUser, Visit } from '@/types/app.types'
 
 const GOLD = 'oklch(0.838 0.176 86.4)'
@@ -23,7 +26,8 @@ const NAVY = 'oklch(0.188 0.075 262)'
 export function VisitsPage() {
   const { activeVisits, loading: visitsLoading, createVisit, endVisit } = useVisits()
   const { search: searchUsers } = useCompanyUsers()
-  const { searchVisitors, searchCompanies } = useVisitorSearch()
+  const { searchVisitors } = useVisitorSearch()
+  const { empreiteiras } = useEmpreiteiras()
 
   const [quickQuery, setQuickQuery] = useState('')
   const [quickResults, setQuickResults] = useState<Visitor[]>([])
@@ -36,55 +40,49 @@ export function VisitsPage() {
   const [selectedUser, setSelectedUser] = useState<CompanyUser | null>(null)
   const [showUserDropdown, setShowUserDropdown] = useState(false)
 
-  const [companyQuery, setCompanyQuery] = useState('')
-  const [companySuggestions, setCompanySuggestions] = useState<string[]>([])
-  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false)
-
   const [submitting, setSubmitting] = useState(false)
   const [endTarget, setEndTarget] = useState<Visit | null>(null)
   const [printVisit, setPrintVisit] = useState<Visit | null>(null)
 
   const quickTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const userTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const companyTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const form = useForm<VisitFormValues>({
     resolver: zodResolver(visitFormSchema),
-    defaultValues: { visitor_name: '', documento: '', visitor_company: '', company_user_id: '', purpose: '', vehicle_plate: '' },
+    defaultValues: {
+      visitor_name: '',
+      documento: '',
+      funcao: '',
+      empreiteira_id: '',
+      company_user_id: '',
+      atividade: '',
+      vehicle_plate: '',
+      epi_verificado: false,
+    },
   })
 
-  useEffect(() => {
+  function handleQuickSearch(value: string) {
+    setQuickQuery(value)
     clearTimeout(quickTimerRef.current)
-    if (quickQuery.trim().length < 2) { setQuickResults([]); setShowQuickDropdown(false); return }
+    if (value.trim().length < 2) { setQuickResults([]); setShowQuickDropdown(false); return }
     quickTimerRef.current = setTimeout(async () => {
-      const results = await searchVisitors(quickQuery)
+      const results = await searchVisitors(value)
       setQuickResults(results)
       setShowQuickDropdown(results.length > 0)
     }, 300)
-    return () => clearTimeout(quickTimerRef.current)
-  }, [quickQuery, searchVisitors])
+  }
 
-  useEffect(() => {
-    clearTimeout(companyTimerRef.current)
-    if (companyQuery.length < 5) { setCompanySuggestions([]); setShowCompanyDropdown(false); return }
-    companyTimerRef.current = setTimeout(async () => {
-      const results = await searchCompanies(companyQuery)
-      setCompanySuggestions(results)
-      setShowCompanyDropdown(results.length > 0)
-    }, 300)
-    return () => clearTimeout(companyTimerRef.current)
-  }, [companyQuery, searchCompanies])
-
-  useEffect(() => {
+  function handleUserSearch(value: string) {
+    setUserQuery(value)
+    if (!value) { setSelectedUser(null); form.setValue('company_user_id', ''); return }
     clearTimeout(userTimerRef.current)
-    if (userQuery.length < 3) { setUserResults([]); setShowUserDropdown(false); return }
+    if (value.length < 3) { setUserResults([]); setShowUserDropdown(false); return }
     userTimerRef.current = setTimeout(async () => {
-      const results = await searchUsers(userQuery)
+      const results = await searchUsers(value)
       setUserResults(results)
       setShowUserDropdown(true)
     }, 300)
-    return () => clearTimeout(userTimerRef.current)
-  }, [userQuery, searchUsers])
+  }
 
   function selectVisitor(visitor: Visitor) {
     setBlacklistAlert('')
@@ -97,15 +95,23 @@ export function VisitsPage() {
     setSelectedVisitor(visitor)
     form.setValue('visitor_name', visitor.full_name)
     form.setValue('documento', visitor.cpf ?? visitor.rg ?? '')
-    form.setValue('visitor_company', visitor.company ?? '')
-    setCompanyQuery(visitor.company ?? '')
+    if (visitor.funcao) form.setValue('funcao', visitor.funcao)
+    if (visitor.empreiteira_id) form.setValue('empreiteira_id', visitor.empreiteira_id)
   }
 
   function clearVisitor() {
     setSelectedVisitor(null)
     setBlacklistAlert('')
-    setCompanyQuery('')
-    form.reset({ visitor_name: '', documento: '', visitor_company: '', company_user_id: form.getValues('company_user_id'), purpose: form.getValues('purpose'), vehicle_plate: '' })
+    form.reset({
+      visitor_name: '',
+      documento: '',
+      funcao: form.getValues('funcao'),
+      empreiteira_id: form.getValues('empreiteira_id'),
+      company_user_id: form.getValues('company_user_id'),
+      atividade: form.getValues('atividade'),
+      vehicle_plate: '',
+      epi_verificado: form.getValues('epi_verificado'),
+    })
   }
 
   function selectUser(user: CompanyUser) {
@@ -116,11 +122,19 @@ export function VisitsPage() {
   }
 
   const resetForm = useCallback(() => {
-    form.reset({ visitor_name: '', documento: '', visitor_company: '', company_user_id: '', purpose: '', vehicle_plate: '' })
+    form.reset({
+      visitor_name: '',
+      documento: '',
+      funcao: '',
+      empreiteira_id: '',
+      company_user_id: '',
+      atividade: '',
+      vehicle_plate: '',
+      epi_verificado: false,
+    })
     setSelectedVisitor(null)
     setSelectedUser(null)
     setQuickQuery('')
-    setCompanyQuery('')
     setUserQuery('')
   }, [form])
 
@@ -140,8 +154,8 @@ export function VisitsPage() {
   async function handleEndVisit() {
     if (!endTarget) return
     const error = await endVisit(endTarget.id)
-    if (error) toast.error('Erro ao encerrar visita')
-    else toast.success('Visita encerrada')
+    if (error) toast.error('Erro ao encerrar registro')
+    else toast.success('Registro encerrado')
     setEndTarget(null)
   }
 
@@ -152,12 +166,12 @@ export function VisitsPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Registro de Visitas" description="Registre a entrada e saída de visitantes" />
+      <PageHeader title="Registro de Entrada" description="Registre a entrada e saída de trabalhadores" />
 
-      {/* ── BUSCA RÁPIDA (hero do porteiro) ── */}
+      {/* ── BUSCA RÁPIDA ── */}
       <div className="rounded-xl border-2 bg-white p-5 shadow-sm" style={{ borderColor: GOLD }}>
         <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: NAVY }}>
-          Busca rápida de visitante
+          Busca rápida de trabalhador
         </p>
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
@@ -165,7 +179,7 @@ export function VisitsPage() {
             type="text"
             placeholder="Buscar por nome ou documento..."
             value={quickQuery}
-            onChange={(e) => setQuickQuery(e.target.value)}
+            onChange={(e) => handleQuickSearch(e.target.value)}
             onBlur={() => setTimeout(() => setShowQuickDropdown(false), 150)}
             onFocus={() => quickResults.length > 0 && setShowQuickDropdown(true)}
             className="w-full h-12 pl-11 pr-4 rounded-lg border-2 text-base outline-none transition-colors"
@@ -194,7 +208,12 @@ export function VisitsPage() {
                     <p className="text-sm font-semibold text-slate-800">{v.full_name}</p>
                     <p className="text-xs text-slate-500">
                       {v.cpf ?? v.rg ?? 'Sem documento'}
-                      {v.company && <span className="ml-2 font-medium">· {v.company}</span>}
+                      {v.funcao && <span className="ml-2 font-medium">· {v.funcao}</span>}
+                      {(v as Visitor & { empreiteira?: { razao_social: string } }).empreiteira?.razao_social && (
+                        <span className="ml-2 font-medium">
+                          · {(v as Visitor & { empreiteira?: { razao_social: string } }).empreiteira!.razao_social}
+                        </span>
+                      )}
                     </p>
                   </div>
                 </button>
@@ -203,7 +222,6 @@ export function VisitsPage() {
           )}
         </div>
 
-        {/* Alerta blacklist */}
         {blacklistAlert && (
           <div className="mt-3 flex items-center gap-3 bg-red-50 border border-red-300 rounded-lg px-4 py-3">
             <AlertCircle className="h-5 w-5 text-red-500 shrink-0" />
@@ -211,7 +229,6 @@ export function VisitsPage() {
           </div>
         )}
 
-        {/* Visitante selecionado */}
         {selectedVisitor && (
           <div className="mt-3 flex items-center gap-3 rounded-lg px-4 py-3" style={{ background: 'oklch(0.97 0.05 140)', border: '1px solid oklch(0.78 0.12 140)' }}>
             <UserCheck className="h-5 w-5 shrink-0" style={{ color: 'oklch(0.5 0.15 140)' }} />
@@ -230,7 +247,7 @@ export function VisitsPage() {
       <Card className="shadow-sm">
         <CardContent className="pt-5">
           <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: NAVY }}>
-            Dados da visita
+            Dados do trabalhador
           </p>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -240,7 +257,7 @@ export function VisitsPage() {
                   <FormItem>
                     <FormLabel className="font-semibold text-slate-700">Nome *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nome completo do visitante" className="h-11" {...field} />
+                      <Input placeholder="Nome completo do trabalhador" className="h-11" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -258,55 +275,61 @@ export function VisitsPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Empresa */}
-                <FormField control={form.control} name="visitor_company" render={({ field }) => (
+                {/* Função */}
+                <FormField control={form.control} name="funcao" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-semibold text-slate-700">Empresa do visitante</FormLabel>
-                    <div className="relative">
+                    <FormLabel className="font-semibold text-slate-700">Função</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <div className="relative">
-                          <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                          <Input
-                            placeholder="Digite a empresa"
-                            className="h-11 pl-9"
-                            {...field}
-                            value={companyQuery}
-                            onChange={(e) => { setCompanyQuery(e.target.value); field.onChange(e.target.value) }}
-                            onFocus={() => companySuggestions.length > 0 && setShowCompanyDropdown(true)}
-                            onBlur={() => setTimeout(() => setShowCompanyDropdown(false), 150)}
-                          />
-                        </div>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Selecione a função" />
+                        </SelectTrigger>
                       </FormControl>
-                      {showCompanyDropdown && companySuggestions.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 z-50 bg-white border rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
-                          {companySuggestions.map((name) => (
-                            <button key={name} type="button"
-                              className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-yellow-50"
-                              onClick={() => { setCompanyQuery(name); field.onChange(name); setShowCompanyDropdown(false) }}>
-                              <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                              {name}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                      <SelectContent>
+                        {FUNCOES_OBRA.map((f) => (
+                          <SelectItem key={f} value={f}>{f}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )} />
 
-                {/* Pessoa a ser visitada */}
+                {/* Empreiteira */}
+                <FormField control={form.control} name="empreiteira_id" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-semibold text-slate-700">Empreiteira</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Selecione a empreiteira" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {empreiteiras.filter((e) => e.active).map((e) => (
+                          <SelectItem key={e.id} value={e.id}>{e.razao_social}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+
+              {/* Responsável / Frente */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="company_user_id" render={() => (
                   <FormItem>
-                    <FormLabel className="font-semibold text-slate-700">Pessoa a ser visitada *</FormLabel>
+                    <FormLabel className="font-semibold text-slate-700">Responsável / Frente</FormLabel>
                     <div className="relative">
                       <FormControl>
                         <div className="relative">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                           <Input
-                            placeholder="Digite o nome para buscar"
+                            placeholder="Buscar encarregado"
                             className="h-11 pl-9"
                             value={userQuery}
-                            onChange={(e) => { setUserQuery(e.target.value); if (!e.target.value) { setSelectedUser(null); form.setValue('company_user_id', '') } }}
+                            onChange={(e) => handleUserSearch(e.target.value)}
                             onFocus={() => userResults.length > 0 && setShowUserDropdown(true)}
                             onBlur={() => setTimeout(() => setShowUserDropdown(false), 150)}
                           />
@@ -318,43 +341,32 @@ export function VisitsPage() {
                             <button key={u.id} type="button"
                               className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-yellow-50 border-b last:border-0"
                               onClick={() => selectUser(u)}>
-                              <Phone className="h-4 w-4 text-slate-400 shrink-0" />
                               <div>
                                 <p className="text-sm font-semibold text-slate-800">{u.full_name}</p>
-                                <p className="text-xs text-slate-500">
-                                  {u.department?.name ?? 'Sem departamento'}
-                                  {u.ramal && <span className="ml-2 font-bold" style={{ color: NAVY }}>Ramal {u.ramal}</span>}
-                                </p>
+                                <p className="text-xs text-slate-500">{u.department?.name ?? 'Sem frente'}</p>
                               </div>
                             </button>
                           ))}
                         </div>
                       )}
                     </div>
-                    {selectedUser?.ramal && (
-                      <div className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg" style={{ background: 'oklch(0.95 0.06 86)', border: `1px solid ${GOLD}` }}>
-                        <Phone className="h-4 w-4 shrink-0" style={{ color: NAVY }} />
-                        <p className="text-sm font-bold" style={{ color: NAVY }}>
-                          Ligue para o ramal <span className="text-lg">{selectedUser.ramal}</span> para autorizar
-                        </p>
-                      </div>
-                    )}
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                {/* Atividade do dia */}
+                <FormField control={form.control} name="atividade" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-semibold text-slate-700">Atividade do dia *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: Concretagem, Elétrica, Acabamento" className="h-11" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="purpose" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-semibold text-slate-700">Motivo da visita *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Reunião, Entrega, Manutenção" className="h-11" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-
                 <FormField control={form.control} name="vehicle_plate" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="font-semibold text-slate-700">Placa do veículo</FormLabel>
@@ -365,6 +377,29 @@ export function VisitsPage() {
                         {...field}
                         onChange={(e) => field.onChange(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7))}
                       />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                {/* EPI verificado */}
+                <FormField control={form.control} name="epi_verificado" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-semibold text-slate-700">EPI verificado</FormLabel>
+                    <FormControl>
+                      <button
+                        type="button"
+                        onClick={() => field.onChange(!field.value)}
+                        className="flex items-center gap-3 h-11 w-full px-4 rounded-lg border-2 transition-all text-sm font-semibold"
+                        style={{
+                          borderColor: field.value ? 'oklch(0.5 0.15 140)' : 'oklch(0.908 0.008 264)',
+                          backgroundColor: field.value ? 'oklch(0.97 0.05 140)' : 'white',
+                          color: field.value ? 'oklch(0.3 0.12 140)' : 'oklch(0.52 0.018 264)',
+                        }}
+                      >
+                        <ShieldCheck className="h-5 w-5 shrink-0" />
+                        {field.value ? '✓ Capacete, colete e bota conferidos' : 'Clique para confirmar EPI'}
+                      </button>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -386,12 +421,12 @@ export function VisitsPage() {
         </CardContent>
       </Card>
 
-      {/* ── VISITAS ATIVAS ── */}
+      {/* ── TRABALHADORES ATIVOS ── */}
       <div>
         <div className="flex items-center gap-2 mb-3">
           <ClipboardList className="h-5 w-5" style={{ color: NAVY }} />
           <h2 className="text-base font-bold" style={{ color: NAVY }}>
-            Visitantes em andamento
+            Trabalhadores no local
           </h2>
           {!visitsLoading && (
             <span className="ml-1 text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: activeVisits.length > 0 ? NAVY : 'oklch(0.52 0.018 264)' }}>
@@ -404,8 +439,8 @@ export function VisitsPage() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow style={{ backgroundColor: 'oklch(0.188 0.075 262)' }}>
-                  {['Visitante', 'Empresa', 'Visitando', 'Motivo', 'Entrada', 'Placa', ''].map((h) => (
+                <TableRow style={{ backgroundColor: NAVY }}>
+                  {['Trabalhador', 'Função', 'Empreiteira', 'Responsável', 'Atividade', 'Entrada', 'EPI', ''].map((h) => (
                     <TableHead key={h} className="text-white font-semibold text-xs uppercase tracking-wide">{h}</TableHead>
                   ))}
                 </TableRow>
@@ -413,13 +448,13 @@ export function VisitsPage() {
               <TableBody>
                 {visitsLoading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-10 text-slate-400">Carregando...</TableCell>
+                    <TableCell colSpan={8} className="text-center py-10 text-slate-400">Carregando...</TableCell>
                   </TableRow>
                 ) : activeVisits.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-14 text-slate-400">
+                    <TableCell colSpan={8} className="text-center py-14 text-slate-400">
                       <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                      <p>Nenhum visitante em andamento</p>
+                      <p>Nenhum trabalhador no local</p>
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -427,20 +462,24 @@ export function VisitsPage() {
                     <TableRow key={visit.id} className="hover:bg-yellow-50/40 transition-colors">
                       <TableCell>
                         <p className="font-semibold text-slate-800 text-sm">{visit.visitor?.full_name}</p>
-                        <p className="text-xs text-slate-400 font-mono">{visit.visitor?.cpf ?? '—'}</p>
+                        <p className="text-xs text-slate-400 font-mono">{visit.visitor?.cpf ?? visit.visitor?.rg ?? '—'}</p>
                       </TableCell>
-                      <TableCell className="text-sm text-slate-600">{visit.visitor?.company ?? '—'}</TableCell>
-                      <TableCell>
-                        <p className="text-sm font-medium text-slate-700">{visit.company_user?.full_name ?? '—'}</p>
-                        {visit.company_user?.ramal && (
-                          <p className="text-xs font-bold" style={{ color: NAVY }}>Ramal {visit.company_user.ramal}</p>
-                        )}
+                      <TableCell className="text-sm text-slate-600">{visit.visitor?.funcao ?? '—'}</TableCell>
+                      <TableCell className="text-sm text-slate-600">
+                        {(visit.visitor as Visitor & { empreiteira?: { razao_social: string } })?.empreiteira?.razao_social ?? '—'}
                       </TableCell>
-                      <TableCell className="text-sm text-slate-500 max-w-[140px] truncate">{visit.purpose ?? '—'}</TableCell>
+                      <TableCell className="text-sm text-slate-600">{visit.company_user?.full_name ?? '—'}</TableCell>
+                      <TableCell className="text-sm text-slate-500 max-w-[130px] truncate">{visit.atividade ?? '—'}</TableCell>
                       <TableCell className="text-sm text-slate-600 whitespace-nowrap">
                         {format(new Date(visit.checked_in_at), "HH:mm · dd/MM", { locale: ptBR })}
                       </TableCell>
-                      <TableCell className="text-sm font-mono font-bold text-slate-600">{visit.vehicle_plate ?? '—'}</TableCell>
+                      <TableCell>
+                        {visit.epi_verificado ? (
+                          <span className="text-xs font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full">✓ OK</span>
+                        ) : (
+                          <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">Não</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <div className="flex justify-end gap-1">
                           <Button size="sm" variant="ghost" title="Imprimir crachá" onClick={() => handlePrint(visit)}
@@ -464,7 +503,7 @@ export function VisitsPage() {
 
       <ConfirmDialog
         open={!!endTarget}
-        title="Encerrar visita"
+        title="Encerrar registro"
         description={`Confirma a saída de "${endTarget?.visitor?.full_name}"?`}
         confirmLabel="Encerrar"
         onConfirm={handleEndVisit}
@@ -474,17 +513,21 @@ export function VisitsPage() {
       {printVisit && (
         <div id="badge-print-root" style={{ display: 'none' }} className="p-8 font-sans">
           <div style={{ border: '3px solid #162050', borderRadius: 12, padding: 32, maxWidth: 320, margin: '0 auto' }}>
-            <p style={{ textAlign: 'center', fontWeight: 800, fontSize: 20, color: '#162050', marginBottom: 2, letterSpacing: 4 }}>VISITANTE</p>
+            <p style={{ textAlign: 'center', fontWeight: 800, fontSize: 20, color: '#162050', marginBottom: 2, letterSpacing: 4 }}>TRABALHADOR</p>
             <div style={{ height: 3, background: '#F5C200', borderRadius: 2, marginBottom: 16 }} />
             <p style={{ textAlign: 'center', fontSize: 22, fontWeight: 700, color: '#162050', marginBottom: 16 }}>{printVisit.visitor?.full_name}</p>
             <hr style={{ borderColor: '#e2e8f0' }} />
             <div style={{ marginTop: 14, fontSize: 13, lineHeight: 1.8, color: '#334155' }}>
-              <p>Documento: <strong>{printVisit.visitor?.cpf ?? '—'}</strong></p>
-              {printVisit.visitor?.company && <p>Empresa: <strong>{printVisit.visitor.company}</strong></p>}
-              <p>Visitando: <strong>{printVisit.company_user?.full_name ?? '—'}</strong></p>
-              {printVisit.company_user?.ramal && <p>Ramal: <strong>{printVisit.company_user.ramal}</strong></p>}
+              <p>Documento: <strong>{printVisit.visitor?.cpf ?? printVisit.visitor?.rg ?? '—'}</strong></p>
+              {printVisit.visitor?.funcao && <p>Função: <strong>{printVisit.visitor.funcao}</strong></p>}
+              {(printVisit.visitor as Visitor & { empreiteira?: { razao_social: string } })?.empreiteira?.razao_social && (
+                <p>Empreiteira: <strong>{(printVisit.visitor as Visitor & { empreiteira?: { razao_social: string } })!.empreiteira!.razao_social}</strong></p>
+              )}
+              {printVisit.company_user && <p>Responsável: <strong>{printVisit.company_user.full_name}</strong></p>}
+              <p>Atividade: <strong>{printVisit.atividade ?? '—'}</strong></p>
               <p>Entrada: <strong>{format(new Date(printVisit.checked_in_at), "dd/MM/yyyy 'às' HH:mm")}</strong></p>
               {printVisit.vehicle_plate && <p>Veículo: <strong>{printVisit.vehicle_plate}</strong></p>}
+              <p>EPI: <strong>{printVisit.epi_verificado ? '✓ Verificado' : 'Não verificado'}</strong></p>
             </div>
           </div>
         </div>

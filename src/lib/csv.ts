@@ -1,19 +1,19 @@
 import Papa from 'papaparse'
 import { format } from 'date-fns'
-import { formatCPF, formatVisitorType } from './utils'
+import { formatCPF } from './utils'
 import type { Visit } from '@/types/app.types'
 
 export function generateVisitsCSV(visits: Visit[]) {
   const rows = visits.map((v) => ({
-    Visitante: v.visitor?.full_name ?? '',
+    Trabalhador: v.visitor?.full_name ?? '',
     CPF: v.visitor?.cpf ? formatCPF(v.visitor.cpf) : '',
     RG: v.visitor?.rg ?? '',
-    Telefone: v.visitor?.phone ?? '',
-    Visitado: v.company_user?.full_name ?? '',
-    Ramal: v.company_user?.ramal ?? '',
-    Departamento: v.company_user?.department?.name ?? '',
-    Tipo: formatVisitorType(v.visitor_type),
-    Motivo: v.purpose ?? '',
+    Função: v.visitor?.funcao ?? '',
+    Empreiteira: v.visitor?.empreiteira?.razao_social ?? '',
+    Responsável: v.company_user?.full_name ?? '',
+    'Frente de Obra': v.company_user?.department?.name ?? '',
+    Atividade: v.atividade ?? v.purpose ?? '',
+    EPI_Verificado: v.epi_verificado ? 'Sim' : 'Não',
     Entrada: format(new Date(v.checked_in_at), 'dd/MM/yyyy HH:mm'),
     Saída: v.checked_out_at ? format(new Date(v.checked_out_at), 'dd/MM/yyyy HH:mm') : '',
     Placa: v.vehicle_plate ?? '',
@@ -25,7 +25,7 @@ export function generateVisitsCSV(visits: Visit[]) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `relatorio-visitas-${format(new Date(), 'yyyy-MM-dd')}.csv`
+  a.download = `relatorio-obra-${format(new Date(), 'yyyy-MM-dd')}.csv`
   a.click()
   URL.revokeObjectURL(url)
 }

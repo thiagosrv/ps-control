@@ -30,10 +30,10 @@ export function maskCPF(cpf: string): string {
 
 export function formatVisitorType(type: string): string {
   const map: Record<string, string> = {
-    employee: 'Funcionário',
+    employee: 'Encarregado',
     supplier: 'Fornecedor',
     contractor: 'Prestador',
-    other: 'Outro',
+    other: 'Visitante',
   }
   return map[type] ?? type
 }
@@ -41,3 +41,18 @@ export function formatVisitorType(type: string): string {
 export function formatVisitStatus(status: string): string {
   return status === 'active' ? 'Em andamento' : 'Encerrada'
 }
+
+export const FUNCOES_OBRA = [
+  'Pedreiro',
+  'Armador',
+  'Carpinteiro',
+  'Eletricista',
+  'Encanador',
+  'Pintor',
+  'Servente',
+  'Técnico',
+  'Engenheiro',
+  'Encarregado',
+  'Fiscal',
+  'Visitante',
+]

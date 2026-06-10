@@ -1,7 +1,7 @@
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { toast } from 'sonner'
-import { Users, LogIn, Truck, Calendar, LogOut } from 'lucide-react'
+import { HardHat, LogIn, Building2, Calendar, LogOut } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts'
 import { useDashboardStats } from '@/hooks/useDashboardStats'
 import { useVisits } from '@/hooks/useVisits'
@@ -10,8 +10,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
-import { formatCPF, formatVisitorType } from '@/lib/utils'
-import type { Visit } from '@/types/app.types'
+import { formatCPF } from '@/lib/utils'
+import type { Visit, Visitor } from '@/types/app.types'
 import { useState } from 'react'
 
 interface StatCardProps { title: string; value: number; icon: React.ElementType; color: string; loading: boolean }
@@ -46,8 +46,8 @@ export function DashboardPage() {
   async function handleEnd() {
     if (!endTarget) return
     const error = await endVisit(endTarget.id)
-    if (error) toast.error('Erro ao encerrar visita')
-    else toast.success('Visita encerrada')
+    if (error) toast.error('Erro ao encerrar registro')
+    else toast.success('Registro encerrado')
     setEndTarget(null)
   }
 
@@ -64,25 +64,25 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Visitas em andamento" value={stats.activeVisits} icon={Users} color="bg-blue-600" loading={loading} />
+        <StatCard title="Trabalhadores no local" value={stats.activeVisits} icon={HardHat} color="bg-blue-600" loading={loading} />
         <StatCard title="Entradas hoje" value={stats.todayEntries} icon={LogIn} color="bg-green-600" loading={loading} />
-        <StatCard title="Fornecedores hoje" value={stats.supplierEntries} icon={Truck} color="bg-orange-500" loading={loading} />
+        <StatCard title="Empreiteiras ativas" value={stats.supplierEntries} icon={Building2} color="bg-orange-500" loading={loading} />
         <StatCard title="Total do mês" value={stats.monthTotal} icon={Calendar} color="bg-purple-600" loading={loading} />
       </div>
 
-      {/* Active visits */}
+      {/* Trabalhadores ativos */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <Users className="h-4 w-4 text-blue-600" />
-            Visitantes em andamento
+            <HardHat className="h-4 w-4 text-blue-600" />
+            Trabalhadores no local
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
             <div className="p-4 space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
           ) : activeVisits.length === 0 ? (
-            <p className="text-center text-slate-400 py-8 text-sm">Nenhum visitante em andamento</p>
+            <p className="text-center text-slate-400 py-8 text-sm">Nenhum trabalhador no local</p>
           ) : (
             <div className="divide-y">
               {activeVisits.map((v) => (
@@ -90,14 +90,17 @@ export function DashboardPage() {
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-slate-800 truncate">{v.visitor?.full_name}</p>
                     <p className="text-xs text-slate-500">
-                      Visitando: {v.company_user?.full_name ?? '—'} ·{' '}
+                      {v.visitor?.funcao ?? 'Sem função'} ·{' '}
+                      {(v.visitor as Visitor & { empreiteira?: { razao_social: string } })?.empreiteira?.razao_social ?? 'Sem empreiteira'} ·{' '}
                       {format(new Date(v.checked_in_at), "HH:mm", { locale: ptBR })}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Badge variant="outline" className="text-xs">
-                      {formatVisitorType(v.visitor_type)}
-                    </Badge>
+                    {v.epi_verificado ? (
+                      <Badge variant="outline" className="text-xs text-green-700 border-green-300">EPI ✓</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs text-red-600 border-red-300">Sem EPI</Badge>
+                    )}
                     <Button size="sm" variant="destructive" className="gap-1 h-7" onClick={() => setEndTarget(v)}>
                       <LogOut className="h-3 w-3" />
                       Encerrar
@@ -111,7 +114,6 @@ export function DashboardPage() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Hourly chart */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Entradas por hora — hoje</CardTitle>
@@ -128,7 +130,6 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Weekly chart */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Entradas — últimos 7 dias</CardTitle>
@@ -147,7 +148,7 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      {/* Recent entries */}
+      {/* Últimas entradas */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Últimas entradas</CardTitle>
@@ -164,7 +165,7 @@ export function DashboardPage() {
                   <div>
                     <p className="text-sm font-medium">{v.visitor?.full_name}</p>
                     <p className="text-xs text-slate-500">
-                      {v.visitor?.cpf ? formatCPF(v.visitor.cpf) : '—'} · {v.company_user?.full_name ?? '—'}
+                      {v.visitor?.cpf ? formatCPF(v.visitor.cpf) : '—'} · {v.visitor?.funcao ?? '—'}
                     </p>
                   </div>
                   <div className="text-right">
@@ -182,7 +183,7 @@ export function DashboardPage() {
 
       <ConfirmDialog
         open={!!endTarget}
-        title="Encerrar visita"
+        title="Encerrar registro"
         description={`Confirma a saída de "${endTarget?.visitor?.full_name}"?`}
         confirmLabel="Encerrar"
         onConfirm={handleEnd}
