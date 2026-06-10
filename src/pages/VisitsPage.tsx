@@ -69,8 +69,10 @@ export function VisitsPage() {
   const [entryPhotoPreview, setEntryPhotoPreview] = useState<string | null>(null)
   const [exitPhoto, setExitPhoto] = useState<File | null>(null)
   const [exitPhotoPreview, setExitPhotoPreview] = useState<string | null>(null)
-  const entryPhotoRef = useRef<HTMLInputElement>(null)
-  const exitPhotoRef = useRef<HTMLInputElement>(null)
+  const entryCameraRef = useRef<HTMLInputElement>(null)
+  const entryGalleryRef = useRef<HTMLInputElement>(null)
+  const exitCameraRef = useRef<HTMLInputElement>(null)
+  const exitGalleryRef = useRef<HTMLInputElement>(null)
 
   const quickTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const userTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -159,7 +161,8 @@ export function VisitsPage() {
   function clearEntryPhoto() {
     setEntryPhoto(null)
     setEntryPhotoPreview(null)
-    if (entryPhotoRef.current) entryPhotoRef.current.value = ''
+    if (entryCameraRef.current) entryCameraRef.current.value = ''
+    if (entryGalleryRef.current) entryGalleryRef.current.value = ''
   }
 
   function handleExitPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -172,7 +175,8 @@ export function VisitsPage() {
   function clearExitPhoto() {
     setExitPhoto(null)
     setExitPhotoPreview(null)
-    if (exitPhotoRef.current) exitPhotoRef.current.value = ''
+    if (exitCameraRef.current) exitCameraRef.current.value = ''
+    if (exitGalleryRef.current) exitGalleryRef.current.value = ''
   }
 
   const resetForm = useCallback(() => {
@@ -182,7 +186,8 @@ export function VisitsPage() {
     setUserQuery('')
     setEntryPhoto(null)
     setEntryPhotoPreview(null)
-    if (entryPhotoRef.current) entryPhotoRef.current.value = ''
+    if (entryCameraRef.current) entryCameraRef.current.value = ''
+    if (entryGalleryRef.current) entryGalleryRef.current.value = ''
   }, [form])
 
   // ── Submit ────────────────────────────────────────────────────
@@ -554,39 +559,41 @@ export function VisitsPage() {
                   <Camera className="h-3.5 w-3.5" />
                   Foto de Evidência <span className="font-normal normal-case tracking-normal">(opcional)</span>
                 </p>
-                <input
-                  ref={entryPhotoRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleEntryPhotoChange}
-                />
+                {/* inputs hidden — câmera e galeria separados */}
+                <input ref={entryCameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleEntryPhotoChange} />
+                <input ref={entryGalleryRef} type="file" accept="image/*" className="hidden" onChange={handleEntryPhotoChange} />
+
                 {entryPhotoPreview ? (
-                  <div className="relative inline-block">
-                    <img
-                      src={entryPhotoPreview}
-                      alt="Preview"
-                      className="h-24 w-24 object-cover rounded-xl border-2 shadow-sm"
-                      style={{ borderColor: GOLD }}
-                    />
-                    <button
-                      type="button"
-                      onClick={clearEntryPhoto}
-                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <img src={entryPhotoPreview} alt="Preview" className="h-20 w-20 object-cover rounded-xl border-2 shadow-sm" style={{ borderColor: GOLD }} />
+                      <button type="button" onClick={clearEntryPhoto} className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-500">Foto selecionada</p>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => entryPhotoRef.current?.click()}
-                    className="flex items-center gap-3 h-12 px-4 rounded-xl border-2 border-dashed text-sm font-medium transition-colors hover:border-slate-400"
-                    style={{ borderColor: 'oklch(0.85 0.008 264)', color: 'oklch(0.55 0.015 264)' }}
-                  >
-                    <Camera className="h-5 w-5" />
-                    Tirar foto / Selecionar imagem
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => entryCameraRef.current?.click()}
+                      className="flex items-center justify-center gap-2 h-12 rounded-xl border-2 text-sm font-semibold transition-all active:scale-95"
+                      style={{ borderColor: GOLD, backgroundColor: 'oklch(0.97 0.04 86)', color: NAVY }}
+                    >
+                      <Camera className="h-4 w-4" />
+                      Abrir Câmera
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => entryGalleryRef.current?.click()}
+                      className="flex items-center justify-center gap-2 h-12 rounded-xl border-2 text-sm font-semibold transition-all active:scale-95"
+                      style={{ borderColor: 'oklch(0.85 0.008 264)', color: 'oklch(0.45 0.02 264)' }}
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                      Da Galeria
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -803,39 +810,40 @@ export function VisitsPage() {
                 <Camera className="h-3.5 w-3.5" />
                 Foto de saída <span className="font-normal normal-case tracking-normal">(opcional)</span>
               </p>
-              <input
-                ref={exitPhotoRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleExitPhotoChange}
-              />
+              <input ref={exitCameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleExitPhotoChange} />
+              <input ref={exitGalleryRef} type="file" accept="image/*" className="hidden" onChange={handleExitPhotoChange} />
+
               {exitPhotoPreview ? (
-                <div className="relative inline-block">
-                  <img
-                    src={exitPhotoPreview}
-                    alt="Preview saída"
-                    className="h-20 w-20 object-cover rounded-xl border-2 shadow-sm"
-                    style={{ borderColor: GOLD }}
-                  />
-                  <button
-                    type="button"
-                    onClick={clearExitPhoto}
-                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <img src={exitPhotoPreview} alt="Preview saída" className="h-16 w-16 object-cover rounded-xl border-2 shadow-sm" style={{ borderColor: GOLD }} />
+                    <button type="button" onClick={clearExitPhoto} className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-500">Foto selecionada</p>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => exitPhotoRef.current?.click()}
-                  className="flex items-center gap-2 h-11 px-4 rounded-xl border-2 border-dashed text-sm font-medium w-full transition-colors hover:border-slate-400"
-                  style={{ borderColor: 'oklch(0.85 0.008 264)', color: 'oklch(0.55 0.015 264)' }}
-                >
-                  <Camera className="h-4 w-4" />
-                  Tirar foto / Selecionar imagem
-                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => exitCameraRef.current?.click()}
+                    className="flex items-center justify-center gap-2 h-11 rounded-xl border-2 text-sm font-semibold transition-all active:scale-95"
+                    style={{ borderColor: GOLD, backgroundColor: 'oklch(0.97 0.04 86)', color: NAVY }}
+                  >
+                    <Camera className="h-4 w-4" />
+                    Câmera
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => exitGalleryRef.current?.click()}
+                    className="flex items-center justify-center gap-2 h-11 rounded-xl border-2 text-sm font-semibold transition-all active:scale-95"
+                    style={{ borderColor: 'oklch(0.85 0.008 264)', color: 'oklch(0.45 0.02 264)' }}
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    Galeria
+                  </button>
+                </div>
               )}
             </div>
 
