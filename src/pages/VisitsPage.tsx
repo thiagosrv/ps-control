@@ -194,7 +194,7 @@ export function VisitsPage() {
               key={id}
               type="button"
               onClick={() => switchType(id)}
-              className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3 transition-all text-center"
+              className="flex flex-col items-center gap-2 rounded-xl border-2 px-3 py-4 transition-all text-center active:scale-95"
               style={{
                 borderColor: active ? GOLD : 'oklch(0.908 0.008 264)',
                 backgroundColor: active ? 'oklch(0.97 0.04 86)' : 'white',
@@ -306,7 +306,7 @@ export function VisitsPage() {
                   <FormItem>
                     <FormLabel className="font-semibold text-slate-700">Nome *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nome completo" className="h-11" {...field} />
+                      <Input placeholder="Nome completo" className="h-12" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -316,7 +316,7 @@ export function VisitsPage() {
                   <FormItem>
                     <FormLabel className="font-semibold text-slate-700">Documento (CPF / RG)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Opcional" className="h-11" {...field} />
+                      <Input placeholder="Opcional" className="h-12" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -332,7 +332,7 @@ export function VisitsPage() {
                         <FormLabel className="font-semibold text-slate-700">Função</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value ?? ''}>
                           <FormControl>
-                            <SelectTrigger className="h-11"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                            <SelectTrigger className="h-12"><SelectValue placeholder="Selecione" /></SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {FUNCOES_OBRA.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
@@ -347,7 +347,7 @@ export function VisitsPage() {
                         <FormLabel className="font-semibold text-slate-700">Empreiteira</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value ?? ''}>
                           <FormControl>
-                            <SelectTrigger className="h-11"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                            <SelectTrigger className="h-12"><SelectValue placeholder="Selecione" /></SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {empreiteiras.filter((e) => e.active).map((e) => (
@@ -365,7 +365,7 @@ export function VisitsPage() {
                       <FormItem>
                         <FormLabel className="font-semibold text-slate-700">Atividade do dia *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex: Concretagem, Elétrica, Acabamento" className="h-11" {...field} />
+                          <Input placeholder="Ex: Concretagem, Elétrica, Acabamento" className="h-12" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -404,7 +404,7 @@ export function VisitsPage() {
                       <FormControl>
                         <div className="relative">
                           <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                          <Input placeholder="Nome da empresa" className="h-11 pl-9" {...field} />
+                          <Input placeholder="Nome da empresa" className="h-12 pl-9" {...field} />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -437,7 +437,7 @@ export function VisitsPage() {
                       <FormControl>
                         <div className="relative">
                           <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                          <Input placeholder="Empresa do visitante" className="h-11 pl-9" {...field} />
+                          <Input placeholder="Empresa do visitante" className="h-12 pl-9" {...field} />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -452,7 +452,7 @@ export function VisitsPage() {
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                           <Input
                             placeholder="Buscar responsável…"
-                            className="h-11 pl-9"
+                            className="h-12 pl-9"
                             value={userQuery}
                             onChange={(e) => handleUserSearch(e.target.value)}
                             onFocus={() => userResults.length > 0 && setShowUserDropdown(true)}
@@ -500,7 +500,7 @@ export function VisitsPage() {
                 <Button
                   type="submit"
                   size="lg"
-                  className="h-12 px-10 text-base font-bold shadow-md"
+                  className="w-full md:w-auto h-14 md:h-12 md:px-10 text-base font-bold shadow-md rounded-xl"
                   disabled={submitting || !!blacklistAlert}
                   style={{ backgroundColor: NAVY }}
                 >
@@ -525,7 +525,107 @@ export function VisitsPage() {
           )}
         </div>
 
-        <div className="rounded-xl border bg-white overflow-hidden shadow-sm">
+        {/* ── MOBILE: cards ── */}
+        <div className="md:hidden space-y-3">
+          {visitsLoading ? (
+            <div className="bg-white rounded-xl border p-6 text-center text-slate-400 text-sm">Carregando…</div>
+          ) : activeVisits.length === 0 ? (
+            <div className="bg-white rounded-xl border p-10 flex flex-col items-center gap-2 text-slate-400">
+              <ClipboardList className="h-8 w-8 opacity-30" />
+              <p className="text-sm">Nenhuma pessoa no local</p>
+            </div>
+          ) : (
+            activeVisits.map((visit) => {
+              type VisitorWithEmp = Visitor & { empreiteira?: { razao_social: string } }
+              const emp = (visit.visitor as VisitorWithEmp)?.empreiteira?.razao_social
+              const empresa = emp ?? visit.visitor?.company
+              const isTrabalhador = !!visit.visitor?.funcao || !!emp
+              const borderColor = isTrabalhador ? NAVY : 'oklch(0.7 0.12 200)'
+              const initials = visit.visitor?.full_name
+                .split(' ')
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((n) => n[0])
+                .join('')
+                .toUpperCase()
+              return (
+                <div
+                  key={visit.id}
+                  className="bg-white rounded-xl border shadow-sm overflow-hidden"
+                  style={{ borderLeftWidth: 4, borderLeftColor: borderColor }}
+                >
+                  <div className="flex items-start gap-3 p-4">
+                    {/* Avatar */}
+                    <div
+                      className="h-10 w-10 rounded-full shrink-0 flex items-center justify-center text-sm font-bold text-white"
+                      style={{ backgroundColor: borderColor }}
+                    >
+                      {initials}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-bold text-slate-800 text-sm leading-tight truncate">
+                          {visit.visitor?.full_name}
+                        </p>
+                        {visit.epi_verificado && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0"
+                            style={{ backgroundColor: 'oklch(0.93 0.08 140)', color: 'oklch(0.38 0.14 140)' }}>
+                            EPI ✓
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap gap-x-2 mt-0.5">
+                        {visit.visitor?.funcao && (
+                          <span className="text-xs text-slate-500">{visit.visitor.funcao}</span>
+                        )}
+                        {empresa && (
+                          <span className="text-xs text-slate-500 truncate">· {empresa}</span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3 mt-1.5">
+                        <span className="text-[11px] text-slate-400 font-medium">
+                          {format(new Date(visit.checked_in_at), "HH:mm · dd/MM", { locale: ptBR })}
+                        </span>
+                        {visit.atividade && (
+                          <span className="text-[11px] text-slate-500 truncate">· {visit.atividade}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex border-t">
+                    <button
+                      type="button"
+                      onClick={() => handlePrint(visit)}
+                      className="flex-1 flex items-center justify-center gap-2 py-3 text-xs font-semibold text-slate-500 hover:bg-slate-50 transition-colors"
+                    >
+                      <Printer className="h-4 w-4" />
+                      Crachá
+                    </button>
+                    <div className="w-px bg-slate-100" />
+                    <button
+                      type="button"
+                      onClick={() => setEndTarget(visit)}
+                      className="flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold transition-colors"
+                      style={{ color: 'oklch(0.5 0.18 25)' }}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Registrar Saída
+                    </button>
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+
+        {/* ── DESKTOP: tabela ── */}
+        <div className="hidden md:block rounded-xl border bg-white overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>

@@ -135,15 +135,17 @@ export function LoginPage() {
         />
 
         {/* Logo mobile */}
-        <div className="flex lg:hidden mb-10 relative z-10">
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-4">
-            <img
-              src="/logo.png"
-              alt="PS Control"
-              className="h-20 w-auto object-contain"
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-            />
-          </div>
+        <div className="flex lg:hidden mb-8 relative z-10 flex-col items-center gap-2">
+          <img
+            src="/logo.png"
+            alt="PS Control"
+            className="h-24 w-auto object-contain"
+            style={{ filter: 'brightness(0) invert(1)' }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+          />
+          <p className="text-xs font-bold tracking-[0.2em] uppercase" style={{ color: GOLD }}>
+            Controle de Acesso
+          </p>
         </div>
 
         {/* ── Card glass ── */}
@@ -201,7 +203,7 @@ export function LoginPage() {
                               autoComplete="username"
                               autoCapitalize="none"
                               spellCheck={false}
-                              className="pl-10 h-12 text-sm text-white placeholder:text-white/30"
+                              className="pl-10 h-14 text-base text-white placeholder:text-white/30"
                               style={{
                                 background: 'rgba(255,255,255,0.08)',
                                 border: '1px solid rgba(255,255,255,0.12)',
@@ -230,7 +232,7 @@ export function LoginPage() {
                               type={showPassword ? 'text' : 'password'}
                               placeholder="••••••••"
                               autoComplete="current-password"
-                              className="pl-10 pr-11 h-12 text-sm text-white placeholder:text-white/30"
+                              className="pl-10 pr-11 h-14 text-base text-white placeholder:text-white/30"
                               style={{
                                 background: 'rgba(255,255,255,0.08)',
                                 border: '1px solid rgba(255,255,255,0.12)',
@@ -259,7 +261,7 @@ export function LoginPage() {
 
                   <Button
                     type="submit"
-                    className="w-full h-12 font-bold text-base rounded-xl mt-2 border-0"
+                    className="w-full h-14 font-bold text-base rounded-xl mt-2 border-0"
                     style={{
                       background: GOLD,
                       color: NAVY,
