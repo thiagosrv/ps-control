@@ -47,6 +47,7 @@ export function useVisits() {
         .insert({
           full_name: values.visitor_name,
           cpf: values.documento || null,
+          company: values.visitor_company || null,
           funcao: values.funcao || null,
           empreiteira_id: values.empreiteira_id || null,
         })
@@ -59,6 +60,7 @@ export function useVisits() {
       await supabase
         .from('visitors')
         .update({
+          company: values.visitor_company || null,
           funcao: values.funcao || null,
           empreiteira_id: values.empreiteira_id || null,
         })
