@@ -596,7 +596,7 @@ export function VisitsPage() {
                   size="lg"
                   className="w-full md:w-auto h-14 md:h-12 md:px-10 text-base font-bold shadow-md rounded-xl"
                   disabled={submitting || !!blacklistAlert}
-                  style={{ backgroundColor: NAVY }}
+                  style={{ backgroundColor: NAVY, color: 'white' }}
                 >
                   {submitting ? 'Registrando…' : '✓ Registrar Entrada'}
                 </Button>
