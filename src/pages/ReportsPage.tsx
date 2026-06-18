@@ -168,13 +168,14 @@ export function ReportsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50">
-                    <TableHead>Trabalhador</TableHead>
+                    <TableHead>Nome</TableHead>
                     <TableHead>Documento</TableHead>
                     <TableHead>Função</TableHead>
-                    <TableHead>Empreiteira</TableHead>
+                    <TableHead>Empresa</TableHead>
                     <TableHead>Responsável</TableHead>
-                    <TableHead>Atividade</TableHead>
+                    <TableHead>Atividade / Motivo</TableHead>
                     <TableHead>EPI</TableHead>
+                    <TableHead>Placa</TableHead>
                     <TableHead>Entrada</TableHead>
                     <TableHead>Saída</TableHead>
                     <TableHead>Status</TableHead>
@@ -194,7 +195,9 @@ export function ReportsPage() {
                         <TableCell className="text-sm">{v.visitor?.cpf ? formatCPF(v.visitor.cpf) : (v.visitor?.rg ?? '—')}</TableCell>
                         <TableCell className="text-sm">{v.visitor?.funcao ?? '—'}</TableCell>
                         <TableCell className="text-sm">
-                          {(v.visitor as Visitor & { empreiteira?: { razao_social: string } })?.empreiteira?.razao_social ?? '—'}
+                          {(v.visitor as Visitor & { empreiteira?: { razao_social: string } })?.empreiteira?.razao_social
+                            ?? v.visitor?.company
+                            ?? '—'}
                         </TableCell>
                         <TableCell className="text-sm">{v.company_user?.full_name ?? '—'}</TableCell>
                         <TableCell className="text-sm max-w-[120px] truncate">{v.atividade ?? v.purpose ?? '—'}</TableCell>
@@ -202,9 +205,10 @@ export function ReportsPage() {
                           {v.epi_verificado ? (
                             <Badge variant="outline" className="text-xs text-green-700 border-green-300">✓ OK</Badge>
                           ) : (
-                            <Badge variant="outline" className="text-xs text-red-600 border-red-300">Não</Badge>
+                            <Badge variant="outline" className="text-xs text-slate-400 border-slate-200">—</Badge>
                           )}
                         </TableCell>
+                        <TableCell className="text-sm font-mono">{v.vehicle_plate ?? '—'}</TableCell>
                         <TableCell className="text-sm">{format(new Date(v.checked_in_at), 'dd/MM/yyyy HH:mm')}</TableCell>
                         <TableCell className="text-sm">{v.checked_out_at ? format(new Date(v.checked_out_at), 'dd/MM/yyyy HH:mm') : '—'}</TableCell>
                         <TableCell>

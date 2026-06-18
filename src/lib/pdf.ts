@@ -22,22 +22,26 @@ export function generateVisitsPDF(visits: Visit[], companyName: string) {
   autoTable(doc, {
     startY: 35,
     head: [
-      ['Trabalhador', 'Documento', 'Função', 'Empreiteira', 'Responsável', 'EPI', 'Atividade', 'Entrada', 'Saída', 'Placa'],
+      ['Nome', 'Documento', 'Função', 'Empresa', 'Responsável', 'Atividade / Motivo', 'EPI', 'Entrada', 'Saída', 'Placa', 'Status'],
     ],
-    body: visits.map((v) => [
-      v.visitor?.full_name ?? '',
-      v.visitor?.cpf ? formatCPF(v.visitor.cpf) : (v.visitor?.rg ?? ''),
-      v.visitor?.funcao ?? '',
-      v.visitor?.empreiteira?.razao_social ?? '',
-      v.company_user?.full_name ?? '',
-      v.epi_verificado ? 'Sim' : 'Não',
-      v.atividade ?? v.purpose ?? '',
-      format(new Date(v.checked_in_at), 'dd/MM/yyyy HH:mm'),
-      v.checked_out_at
-        ? format(new Date(v.checked_out_at), 'dd/MM/yyyy HH:mm')
-        : 'Em andamento',
-      v.vehicle_plate ?? '',
-    ]),
+    body: visits.map((v) => {
+      const empresa = v.visitor?.empreiteira?.razao_social ?? v.visitor?.company ?? ''
+      return [
+        v.visitor?.full_name ?? '',
+        v.visitor?.cpf ? formatCPF(v.visitor.cpf) : (v.visitor?.rg ?? ''),
+        v.visitor?.funcao ?? '',
+        empresa,
+        v.company_user?.full_name ?? '',
+        v.atividade ?? v.purpose ?? '',
+        v.epi_verificado ? 'Sim' : '—',
+        format(new Date(v.checked_in_at), 'dd/MM/yyyy HH:mm'),
+        v.checked_out_at
+          ? format(new Date(v.checked_out_at), 'dd/MM/yyyy HH:mm')
+          : 'Em andamento',
+        v.vehicle_plate ?? '',
+        v.status === 'active' ? 'Em andamento' : 'Encerrada',
+      ]
+    }),
     styles: { fontSize: 7.5 },
     headStyles: { fillColor: [22, 32, 80] },
     alternateRowStyles: { fillColor: [241, 245, 249] },
