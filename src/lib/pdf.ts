@@ -8,19 +8,30 @@ import type { Visit } from '@/types/app.types'
 export function generateVisitsPDF(visits: Visit[], companyName: string) {
   const doc = new jsPDF({ orientation: 'landscape' })
 
-  doc.setFontSize(16)
-  doc.text(companyName || 'PS Control', 14, 15)
-  doc.setFontSize(11)
-  doc.text('Relatório de Movimentação de Obra', 14, 22)
-  doc.setFontSize(9)
+  // Cabeçalho
+  doc.setFontSize(14)
+  doc.setFont('helvetica', 'bold')
+  doc.text(companyName || 'PS Control', 14, 14)
+
+  doc.setFontSize(12)
+  doc.text('Obra - Paulistão Mococa - SP', 14, 21)
+
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(100, 100, 100)
+  doc.text('Av. João Batista Lima Figueiredo, 497 - Jardim Santa Cecilia, Mococa - SP, 13730-005', 14, 27)
+
+  doc.setFontSize(8)
+  doc.text('Relatório de Movimentação de Obra', 14, 33)
   doc.text(
     `Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`,
     14,
-    28,
+    38,
   )
+  doc.setTextColor(0, 0, 0)
 
   autoTable(doc, {
-    startY: 35,
+    startY: 46,
     head: [
       ['Nome', 'Documento', 'Função', 'Empresa', 'Responsável', 'Atividade / Motivo', 'EPI', 'Entrada', 'Saída', 'Placa', 'Status'],
     ],
