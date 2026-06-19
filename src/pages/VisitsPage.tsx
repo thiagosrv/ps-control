@@ -193,11 +193,6 @@ export function VisitsPage() {
   // ── Submit ────────────────────────────────────────────────────
   async function onSubmit(values: VisitFormValues) {
     if (blacklistAlert) return
-    // Validação de campo obrigatório por tipo
-    if (visitType === 'worker' && !values.atividade?.trim()) {
-      form.setError('atividade', { message: 'Informe a atividade do dia' })
-      return
-    }
     setSubmitting(true)
     const { error, visitId } = await createVisit(values, selectedVisitor?.id)
     if (error) {
@@ -420,7 +415,7 @@ export function VisitsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField control={form.control} name="atividade" render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-semibold text-slate-700">Atividade do dia *</FormLabel>
+                        <FormLabel className="font-semibold text-slate-700">Atividade do dia <span className="font-normal text-slate-400">(opcional)</span></FormLabel>
                         <FormControl>
                           <Input placeholder="Ex: Concretagem, Elétrica, Acabamento" className="h-12" {...field} />
                         </FormControl>
