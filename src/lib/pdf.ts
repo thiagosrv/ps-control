@@ -13,13 +13,20 @@ export function generateVisitsPDF(visits: Visit[], companyName: string) {
   doc.setFont('helvetica', 'bold')
   doc.text(companyName || 'PS Control', 14, 14)
 
-  doc.setFontSize(12)
-  doc.text('Obra - Paulistão Mococa - SP', 14, 21)
+  const obraName    = import.meta.env.VITE_OBRA_NAME    || ''
+  const obraAddress = import.meta.env.VITE_OBRA_ADDRESS || ''
+
+  if (obraName) {
+    doc.setFontSize(12)
+    doc.text(obraName, 14, 21)
+  }
 
   doc.setFontSize(8)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(100, 100, 100)
-  doc.text('Av. João Batista Lima Figueiredo, 497 - Jardim Santa Cecilia, Mococa - SP, 13730-005', 14, 27)
+  if (obraAddress) {
+    doc.text(obraAddress, 14, 27)
+  }
 
   doc.setFontSize(8)
   doc.text('Relatório de Movimentação de Obra', 14, 33)
