@@ -6,7 +6,7 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
   Search, UserCheck, LogOut, AlertCircle, Printer, ClipboardList,
-  X, ShieldCheck, HardHat, Package, User, Building2, Camera,
+  X, ShieldCheck, HardHat, Package, User, Building2, Camera, UserPlus,
 } from 'lucide-react'
 import { useVisits, useVisitorSearch } from '@/hooks/useVisits'
 import { useVisitPhotos } from '@/hooks/useVisitPhotos'
@@ -26,13 +26,21 @@ import type { Visitor, CompanyUser, Visit } from '@/types/app.types'
 const GOLD = 'oklch(0.838 0.176 86.4)'
 const NAVY = 'oklch(0.188 0.075 262)'
 
-type VisitTypeUI = 'worker' | 'delivery' | 'visitor'
+type VisitTypeUI = 'worker' | 'unregistered_worker' | 'delivery' | 'visitor'
 
 const VISIT_TYPES: { id: VisitTypeUI; label: string; sublabel: string; icon: React.ElementType }[] = [
-  { id: 'worker',   label: 'Trabalhador',     sublabel: 'Empreiteira / Obra',       icon: HardHat  },
-  { id: 'delivery', label: 'Entrega / Coleta', sublabel: 'Fornecedor / Transportadora', icon: Package  },
-  { id: 'visitor',  label: 'Visitante',        sublabel: 'Reunião / Vistoria / Fiscal', icon: User     },
+  { id: 'worker',             label: 'Trabalhador Cadastrado',    sublabel: 'Buscar no sistema',           icon: HardHat  },
+  { id: 'unregistered_worker',label: 'Trabalhador Não Registrado',sublabel: 'Sem cadastro prévio',         icon: UserPlus },
+  { id: 'delivery',           label: 'Entrega / Coleta',          sublabel: 'Fornecedor / Transportadora', icon: Package  },
+  { id: 'visitor',            label: 'Visitante',                 sublabel: 'Reunião / Vistoria / Fiscal', icon: User     },
 ]
+
+const VISIT_TYPE_DB: Record<VisitTypeUI, import('@/types/database.types').VisitorType> = {
+  worker:             'employee',
+  unregistered_worker:'unregistered',
+  delivery:           'supplier',
+  visitor:            'other',
+}
 
 const EMPTY_FORM: VisitFormValues = {
   visitor_name: '',
@@ -194,7 +202,7 @@ export function VisitsPage() {
   async function onSubmit(values: VisitFormValues) {
     if (blacklistAlert) return
     setSubmitting(true)
-    const { error, visitId } = await createVisit(values, selectedVisitor?.id)
+    const { error, visitId } = await createVisit(values, selectedVisitor?.id, VISIT_TYPE_DB[visitType])
     if (error) {
       toast.error('Erro ao registrar: ' + (error as { message?: string }).message)
     } else {
@@ -238,7 +246,7 @@ export function VisitsPage() {
       <PageHeader title="Registro de Entrada" description="Registre a entrada e saída de pessoas" />
 
       {/* ── SELETOR DE TIPO ─────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         {VISIT_TYPES.map(({ id, label, sublabel, icon: Icon }) => {
           const active = visitType === id
           return (
@@ -271,6 +279,7 @@ export function VisitsPage() {
       </div>
 
       {/* ── BUSCA RÁPIDA ────────────────────────────────────────── */}
+      {visitType !== 'unregistered_worker' && (
       <div className="rounded-xl border-2 bg-white p-4 shadow-sm" style={{ borderColor: GOLD }}>
         <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: NAVY }}>
           Buscar pessoa já cadastrada
@@ -345,6 +354,7 @@ export function VisitsPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* ── FORMULÁRIO ──────────────────────────────────────────── */}
       <Card className="shadow-sm">
@@ -375,8 +385,8 @@ export function VisitsPage() {
                 )} />
               </div>
 
-              {/* ── TRABALHADOR ── */}
-              {visitType === 'worker' && (
+              {/* ── TRABALHADOR (cadastrado ou não) ── */}
+              {(visitType === 'worker' || visitType === 'unregistered_worker') && (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField control={form.control} name="funcao" render={({ field }) => (
@@ -564,7 +574,7 @@ export function VisitsPage() {
               )}
 
               {/* Placa extra para trabalhador */}
-              {visitType === 'worker' && (
+              {(visitType === 'worker' || visitType === 'unregistered_worker') && (
                 <FormField control={form.control} name="vehicle_plate" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="font-semibold text-slate-700">Placa do veículo <span className="font-normal text-slate-400">(opcional)</span></FormLabel>

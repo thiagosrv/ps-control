@@ -1,6 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
-export type VisitorType = 'employee' | 'supplier' | 'contractor' | 'other'
+export type VisitorType = 'employee' | 'supplier' | 'contractor' | 'other' | 'unregistered'
 export type VisitStatus = 'active' | 'completed'
 
 export interface Database {

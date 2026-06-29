@@ -38,7 +38,7 @@ export function useVisits() {
     return () => { supabase.removeChannel(channel) }
   }, [fetchActive])
 
-  async function createVisit(values: VisitFormValues, existingVisitorId?: string): Promise<{ error: Error | null; visitId?: string }> {
+  async function createVisit(values: VisitFormValues, existingVisitorId?: string, visitorType: import('@/types/database.types').VisitorType = 'other'): Promise<{ error: Error | null; visitId?: string }> {
     let visitorId = existingVisitorId
 
     if (!visitorId) {
@@ -70,7 +70,7 @@ export function useVisits() {
     const { error, data: visitData } = await supabase.from('visits').insert({
       visitor_id: visitorId,
       company_user_id: values.company_user_id || null,
-      visitor_type: 'other',
+      visitor_type: visitorType,
       atividade: values.atividade || null,
       epi_verificado: values.epi_verificado ?? false,
       vehicle_plate: values.vehicle_plate ? values.vehicle_plate.toUpperCase() : null,
