@@ -404,22 +404,37 @@ export function VisitsPage() {
                       </FormItem>
                     )} />
 
-                    <FormField control={form.control} name="empreiteira_id" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="font-semibold text-slate-700">Empreiteira</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                    {visitType === 'worker' ? (
+                      <FormField control={form.control} name="empreiteira_id" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-semibold text-slate-700">Empreiteira</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                            <FormControl>
+                              <SelectTrigger className="h-12"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {empreiteiras.filter((e) => e.active).map((e) => (
+                                <SelectItem key={e.id} value={e.id}>{e.razao_social}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    ) : (
+                      <FormField control={form.control} name="visitor_company" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-semibold text-slate-700">Empresa</FormLabel>
                           <FormControl>
-                            <SelectTrigger className="h-12"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                            <div className="relative">
+                              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                              <Input placeholder="Nome da empresa" className="h-12 pl-9" {...field} />
+                            </div>
                           </FormControl>
-                          <SelectContent>
-                            {empreiteiras.filter((e) => e.active).map((e) => (
-                              <SelectItem key={e.id} value={e.id}>{e.razao_social}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
