@@ -392,14 +392,20 @@ export function VisitsPage() {
                     <FormField control={form.control} name="funcao" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="font-semibold text-slate-700">Função</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                        {visitType === 'unregistered_worker' ? (
                           <FormControl>
-                            <SelectTrigger className="h-12"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                            <Input placeholder="Ex: Pedreiro, Eletricista, Montador…" className="h-12" {...field} />
                           </FormControl>
-                          <SelectContent>
-                            {FUNCOES_OBRA.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        ) : (
+                          <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                            <FormControl>
+                              <SelectTrigger className="h-12"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {FUNCOES_OBRA.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )} />
