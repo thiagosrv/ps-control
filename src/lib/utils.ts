@@ -30,10 +30,11 @@ export function maskCPF(cpf: string): string {
 
 export function formatVisitorType(type: string): string {
   const map: Record<string, string> = {
-    employee: 'Encarregado',
-    supplier: 'Fornecedor',
-    contractor: 'Prestador',
-    other: 'Visitante',
+    employee:     'Trabalhador Cadastrado',
+    unregistered: 'Trabalhador Não Registrado',
+    supplier:     'Entrega / Coleta',
+    contractor:   'Prestador',
+    other:        'Visitante',
   }
   return map[type] ?? type
 }

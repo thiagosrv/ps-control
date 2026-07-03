@@ -2,7 +2,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { formatCPF } from './utils'
+import { formatCPF, formatVisitorType } from './utils'
 import type { Visit } from '@/types/app.types'
 
 export function generateVisitsPDF(visits: Visit[], companyName: string) {
@@ -40,12 +40,13 @@ export function generateVisitsPDF(visits: Visit[], companyName: string) {
   autoTable(doc, {
     startY: 46,
     head: [
-      ['Nome', 'Documento', 'Função', 'Empresa', 'Responsável', 'Atividade / Motivo', 'EPI', 'Entrada', 'Saída', 'Placa', 'Status'],
+      ['Nome', 'Tipo', 'Documento', 'Função', 'Empresa', 'Responsável', 'Atividade / Motivo', 'EPI', 'Entrada', 'Saída', 'Placa', 'Status'],
     ],
     body: visits.map((v) => {
       const empresa = v.visitor?.empreiteira?.razao_social ?? v.visitor?.company ?? ''
       return [
         v.visitor?.full_name ?? '',
+        formatVisitorType(v.visitor_type ?? ''),
         v.visitor?.cpf ? formatCPF(v.visitor.cpf) : (v.visitor?.rg ?? ''),
         v.visitor?.funcao ?? '',
         empresa,

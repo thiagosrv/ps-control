@@ -8,7 +8,7 @@ import { useVisits } from '@/hooks/useVisits'
 import { useAuth } from '@/hooks/useAuth'
 import { useEmpreiteiras } from '@/hooks/useEmpreiteiras'
 import { reportFilterSchema, type ReportFilterValues } from '@/lib/validators'
-import { formatCPF } from '@/lib/utils'
+import { formatCPF, formatVisitorType } from '@/lib/utils'
 import { generateVisitsPDF } from '@/lib/pdf'
 import { generateVisitsCSV } from '@/lib/csv'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -128,6 +128,21 @@ export function ReportsPage() {
                     </Select>
                   </FormItem>
                 )} />
+                <FormField control={form.control} name="visitor_type" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de entrada</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="employee">Trabalhador Cadastrado</SelectItem>
+                        <SelectItem value="unregistered">Trabalhador Não Registrado</SelectItem>
+                        <SelectItem value="supplier">Entrega / Coleta</SelectItem>
+                        <SelectItem value="other">Visitante</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )} />
                 <FormField control={form.control} name="plate" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Placa</FormLabel>
@@ -169,6 +184,7 @@ export function ReportsPage() {
                 <TableHeader>
                   <TableRow className="bg-slate-50">
                     <TableHead>Nome</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead>Documento</TableHead>
                     <TableHead>Função</TableHead>
                     <TableHead>Empresa</TableHead>
@@ -184,7 +200,7 @@ export function ReportsPage() {
                 <TableBody>
                   {results.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center py-12 text-slate-400">
+                      <TableCell colSpan={11} className="text-center py-12 text-slate-400">
                         Nenhum resultado para os filtros aplicados
                       </TableCell>
                     </TableRow>
@@ -192,6 +208,7 @@ export function ReportsPage() {
                     results.map((v) => (
                       <TableRow key={v.id}>
                         <TableCell className="font-medium">{v.visitor?.full_name}</TableCell>
+                        <TableCell className="text-sm text-slate-500">{formatVisitorType(v.visitor_type ?? '')}</TableCell>
                         <TableCell className="text-sm">{v.visitor?.cpf ? formatCPF(v.visitor.cpf) : (v.visitor?.rg ?? '—')}</TableCell>
                         <TableCell className="text-sm">{v.visitor?.funcao ?? '—'}</TableCell>
                         <TableCell className="text-sm">

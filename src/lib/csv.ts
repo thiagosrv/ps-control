@@ -1,6 +1,6 @@
 import Papa from 'papaparse'
 import { format } from 'date-fns'
-import { formatCPF } from './utils'
+import { formatCPF, formatVisitorType } from './utils'
 import type { Visit } from '@/types/app.types'
 
 export function generateVisitsCSV(visits: Visit[]) {
@@ -8,6 +8,7 @@ export function generateVisitsCSV(visits: Visit[]) {
     const empresa = v.visitor?.empreiteira?.razao_social ?? v.visitor?.company ?? ''
     return {
       Nome: v.visitor?.full_name ?? '',
+      Tipo: formatVisitorType(v.visitor_type ?? ''),
       CPF: v.visitor?.cpf ? formatCPF(v.visitor.cpf) : '',
       RG: v.visitor?.rg ?? '',
       Função: v.visitor?.funcao ?? '',
