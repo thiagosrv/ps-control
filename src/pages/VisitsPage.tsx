@@ -443,38 +443,15 @@ export function VisitsPage() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="atividade" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="font-semibold text-slate-700">Atividade do dia <span className="font-normal text-slate-400">(opcional)</span></FormLabel>
-                        <FormControl>
-                          <Input placeholder="Ex: Concretagem, Elétrica, Acabamento" className="h-12" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-
-                    <FormField control={form.control} name="epi_verificado" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="font-semibold text-slate-700">EPI verificado</FormLabel>
-                        <FormControl>
-                          <button
-                            type="button"
-                            onClick={() => field.onChange(!field.value)}
-                            className="flex items-center gap-3 h-11 w-full px-4 rounded-lg border-2 transition-all text-sm font-semibold"
-                            style={{
-                              borderColor: field.value ? 'oklch(0.5 0.15 140)' : 'oklch(0.908 0.008 264)',
-                              backgroundColor: field.value ? 'oklch(0.97 0.05 140)' : 'white',
-                              color: field.value ? 'oklch(0.3 0.12 140)' : 'oklch(0.52 0.018 264)',
-                            }}
-                          >
-                            <ShieldCheck className="h-5 w-5 shrink-0" />
-                            {field.value ? '✓ EPI conferido' : 'Toque para confirmar EPI'}
-                          </button>
-                        </FormControl>
-                      </FormItem>
-                    )} />
-                  </div>
+                  <FormField control={form.control} name="atividade" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-semibold text-slate-700">Atividade do dia <span className="font-normal text-slate-400">(opcional)</span></FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: Concretagem, Elétrica, Acabamento" className="h-12" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
                 </>
               )}
 
@@ -611,6 +588,28 @@ export function VisitsPage() {
                   </FormItem>
                 )} />
               )}
+
+              {/* ── EPI — universal para todos os tipos ── */}
+              <FormField control={form.control} name="epi_verificado" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-semibold text-slate-700">EPI verificado</FormLabel>
+                  <FormControl>
+                    <button
+                      type="button"
+                      onClick={() => field.onChange(!field.value)}
+                      className="flex items-center gap-3 h-12 w-full px-4 rounded-lg border-2 transition-all text-sm font-semibold"
+                      style={{
+                        borderColor: field.value ? 'oklch(0.5 0.15 140)' : 'oklch(0.908 0.008 264)',
+                        backgroundColor: field.value ? 'oklch(0.97 0.05 140)' : 'white',
+                        color: field.value ? 'oklch(0.3 0.12 140)' : 'oklch(0.52 0.018 264)',
+                      }}
+                    >
+                      <ShieldCheck className="h-5 w-5 shrink-0" />
+                      {field.value ? '✓ EPI conferido' : 'Toque para confirmar EPI'}
+                    </button>
+                  </FormControl>
+                </FormItem>
+              )} />
 
               {/* Foto de evidência de entrada */}
               <div className="border-t pt-4">
