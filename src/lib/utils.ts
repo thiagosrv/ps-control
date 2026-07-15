@@ -43,6 +43,16 @@ export function formatVisitStatus(status: string): string {
   return status === 'active' ? 'Em andamento' : 'Encerrada'
 }
 
+const DIACRITICS_RE = new RegExp('[̀-ͯ]', 'g')
+
+export function normalizeText(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(DIACRITICS_RE, '')
+    .toLowerCase()
+    .trim()
+}
+
 export const FUNCOES_OBRA = [
   'Pedreiro',
   'Armador',

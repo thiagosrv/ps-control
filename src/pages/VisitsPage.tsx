@@ -13,7 +13,7 @@ import { useVisitPhotos } from '@/hooks/useVisitPhotos'
 import { useCompanyUsers } from '@/hooks/useCompanyUsers'
 import { useEmpreiteiras } from '@/hooks/useEmpreiteiras'
 import { visitFormSchema, type VisitFormValues } from '@/lib/validators'
-import { FUNCOES_OBRA } from '@/lib/utils'
+import { FUNCOES_OBRA, normalizeText } from '@/lib/utils'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,17 +23,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { Visitor, CompanyUser, Visit } from '@/types/app.types'
 
+// Flags específicas de obra (ativadas via env var no deploy — não afetam as demais obras)
+const HIDE_DELIVERY_TYPE = import.meta.env.VITE_HIDE_DELIVERY_TYPE === 'true'
+const COMPANY_AUTOCOMPLETE = import.meta.env.VITE_COMPANY_AUTOCOMPLETE === 'true'
+
 const GOLD = 'oklch(0.838 0.176 86.4)'
 const NAVY = 'oklch(0.188 0.075 262)'
 
 type VisitTypeUI = 'worker' | 'unregistered_worker' | 'delivery' | 'visitor'
 
-const VISIT_TYPES: { id: VisitTypeUI; label: string; sublabel: string; icon: React.ElementType }[] = [
+const ALL_VISIT_TYPES: { id: VisitTypeUI; label: string; sublabel: string; icon: React.ElementType }[] = [
   { id: 'worker',             label: 'Trabalhador Cadastrado',    sublabel: 'Buscar no sistema',           icon: HardHat  },
   { id: 'unregistered_worker',label: 'Trabalhador Não Registrado',sublabel: 'Sem cadastro prévio',         icon: UserPlus },
   { id: 'delivery',           label: 'Entrega / Coleta',          sublabel: 'Fornecedor / Transportadora', icon: Package  },
   { id: 'visitor',            label: 'Visitante',                 sublabel: 'Reunião / Vistoria / Fiscal', icon: User     },
 ]
+
+const VISIT_TYPES = HIDE_DELIVERY_TYPE
+  ? ALL_VISIT_TYPES.filter((t) => t.id !== 'delivery')
+  : ALL_VISIT_TYPES
 
 const VISIT_TYPE_DB: Record<VisitTypeUI, import('@/types/database.types').VisitorType> = {
   worker:             'employee',
@@ -70,6 +78,7 @@ export function VisitsPage() {
   const [userQuery, setUserQuery] = useState('')
   const [userResults, setUserResults] = useState<CompanyUser[]>([])
   const [showUserDropdown, setShowUserDropdown] = useState(false)
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [endTarget, setEndTarget] = useState<Visit | null>(null)
   const [printVisit, setPrintVisit] = useState<Visit | null>(null)
@@ -118,7 +127,7 @@ export function VisitsPage() {
     if (visitor.empreiteira_id) form.setValue('empreiteira_id', visitor.empreiteira_id)
     // Detectar tipo automaticamente pelo perfil salvo
     if (visitor.funcao || visitor.empreiteira_id) setVisitType('worker')
-    else if (visitor.company) setVisitType('delivery')
+    else if (visitor.company) setVisitType(HIDE_DELIVERY_TYPE ? 'visitor' : 'delivery')
   }
 
   function clearVisitor() {
@@ -246,7 +255,7 @@ export function VisitsPage() {
       <PageHeader title="Registro de Entrada" description="Registre a entrada e saída de pessoas" />
 
       {/* ── SELETOR DE TIPO ─────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className={VISIT_TYPES.length === 3 ? 'grid grid-cols-3 gap-2' : 'grid grid-cols-2 gap-2'}>
         {VISIT_TYPES.map(({ id, label, sublabel, icon: Icon }) => {
           const active = visitType === id
           return (
@@ -492,18 +501,50 @@ export function VisitsPage() {
               {visitType === 'visitor' && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="visitor_company" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="font-semibold text-slate-700">Empresa</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input placeholder="Empresa do visitante" className="h-12 pl-9" {...field} />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
+                    <FormField control={form.control} name="visitor_company" render={({ field }) => {
+                      const query = field.value ?? ''
+                      const companyMatches = COMPANY_AUTOCOMPLETE && normalizeText(query).length >= 2
+                        ? empreiteiras
+                            .filter((e) => e.active && normalizeText(e.razao_social).includes(normalizeText(query)))
+                            .slice(0, 6)
+                        : []
+                      return (
+                        <FormItem>
+                          <FormLabel className="font-semibold text-slate-700">Empresa</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                              <Input
+                                placeholder="Empresa do visitante"
+                                className="h-12 pl-9"
+                                {...field}
+                                onChange={(e) => { field.onChange(e.target.value); setShowCompanyDropdown(true) }}
+                                onFocus={() => setShowCompanyDropdown(true)}
+                                onBlur={() => setTimeout(() => setShowCompanyDropdown(false), 150)}
+                                autoComplete="off"
+                              />
+                              {COMPANY_AUTOCOMPLETE && showCompanyDropdown && companyMatches.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 z-50 bg-white border rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
+                                  {companyMatches.map((e) => (
+                                    <button
+                                      key={e.id}
+                                      type="button"
+                                      className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-sm font-semibold text-slate-800 hover:bg-yellow-50 border-b last:border-0"
+                                      onMouseDown={(ev) => ev.preventDefault()}
+                                      onClick={() => { field.onChange(e.razao_social); setShowCompanyDropdown(false) }}
+                                    >
+                                      <Building2 className="h-3.5 w-3.5 shrink-0" style={{ color: GOLD }} />
+                                      {e.razao_social}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )
+                    }} />
 
                     <FormField control={form.control} name="company_user_id" render={() => (
                       <FormItem>
