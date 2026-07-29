@@ -70,10 +70,7 @@ export function BottomNav({ role, onSignOut }: Props) {
             style={{ bottom: 'calc(64px + env(safe-area-inset-bottom))' }}
           >
             {/* Drag handle */}
-            <div className="flex items-center justify-between px-5 pt-4 pb-2">
-              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'oklch(0.65 0.02 264)' }}>
-                Área do Administrador
-              </p>
+            <div className="flex items-center justify-end px-5 pt-4 pb-2">
               <button
                 onClick={() => setAdminOpen(false)}
                 className="h-8 w-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500"
