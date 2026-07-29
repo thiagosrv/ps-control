@@ -5,8 +5,17 @@ import { registerSW } from 'virtual:pwa-register'
 import { router } from './router'
 import './index.css'
 
-// Registra o service worker — atualiza automaticamente em segundo plano
-registerSW({ immediate: true })
+// Registra o service worker — checa por atualizações periodicamente e recarrega assim que uma nova versão for encontrada
+const updateSW = registerSW({
+  immediate: true,
+  onRegisteredSW(_swUrl, registration) {
+    if (!registration) return
+    setInterval(() => registration.update(), 60 * 1000)
+  },
+  onNeedRefresh() {
+    updateSW(true)
+  },
+})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
