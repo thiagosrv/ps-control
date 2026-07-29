@@ -21,7 +21,7 @@ export function AppShell() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-dvh overflow-hidden bg-slate-50">
       {/* Desktop sidebar overlay */}
       {sidebarOpen && (
         <div

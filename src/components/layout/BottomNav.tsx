@@ -67,7 +67,7 @@ export function BottomNav({ role, onSignOut }: Props) {
               'fixed left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out md:hidden',
               adminOpen ? 'translate-y-0' : 'translate-y-full'
             )}
-            style={{ bottom: '64px' }}
+            style={{ bottom: 'calc(64px + env(safe-area-inset-bottom))' }}
           >
             {/* Drag handle */}
             <div className="flex items-center justify-between px-5 pt-4 pb-2">
