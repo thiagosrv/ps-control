@@ -98,6 +98,7 @@ export function useVisits() {
     visitor_type?: string
     funcao?: string
     empreiteira_id?: string
+    empreiteira_nome?: string
     date_from?: string
     date_to?: string
   }) {
@@ -134,7 +135,11 @@ export function useVisits() {
       results = results.filter((v) => v.visitor?.funcao?.toLowerCase().includes(q))
     }
     if (filters.empreiteira_id) {
-      results = results.filter((v) => v.visitor?.empreiteira_id === filters.empreiteira_id)
+      const nome = filters.empreiteira_nome?.trim().toLowerCase()
+      results = results.filter((v) =>
+        v.visitor?.empreiteira_id === filters.empreiteira_id ||
+        (!!nome && v.visitor?.company?.trim().toLowerCase() === nome)
+      )
     }
 
     return { data: results, error: null }

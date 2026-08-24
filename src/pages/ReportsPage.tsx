@@ -46,9 +46,12 @@ export function ReportsPage() {
 
   async function onSearch(values: ReportFilterValues) {
     setLoading(true)
+    const empreiteira = empreiteiras.find((e) => e.id === values.empreiteira_id)
     const { data, error } = await fetchForReport({
       ...values,
       visitor_type: values.visitor_type === 'all' ? '' : values.visitor_type,
+      empreiteira_id: values.empreiteira_id === 'all' ? '' : values.empreiteira_id,
+      empreiteira_nome: empreiteira?.razao_social,
     })
     if (error) toast.error('Erro ao buscar dados')
     else setResults(data)
