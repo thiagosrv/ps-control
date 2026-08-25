@@ -308,21 +308,29 @@ export function VisitsPage() {
               onClick={() => switchType(id)}
               className="flex flex-col items-center gap-2 rounded-xl border-2 px-3 py-5 transition-all text-center active:scale-95"
               style={{
-                borderColor: active ? GOLD : 'oklch(0.908 0.008 264)',
-                backgroundColor: active ? 'oklch(0.97 0.04 86)' : 'white',
+                borderColor: active ? GOLD : 'oklch(0.30 0.05 262)',
+                background: active
+                  ? `linear-gradient(150deg, oklch(0.27 0.09 262) 0%, ${NAVY} 100%)`
+                  : `linear-gradient(150deg, oklch(0.24 0.06 262) 0%, oklch(0.19 0.06 262) 100%)`,
+                boxShadow: active
+                  ? '0 8px 20px -6px oklch(0.838 0.176 86.4 / 0.35), 0 2px 8px oklch(0.188 0.075 262 / 0.45)'
+                  : '0 1px 3px oklch(0.188 0.075 262 / 0.3)',
               }}
             >
               <Icon
                 className="h-8 w-8"
-                style={{ color: active ? 'oklch(0.55 0.14 86)' : 'oklch(0.52 0.018 264)' }}
+                style={{ color: active ? GOLD : 'oklch(0.838 0.176 86.4 / 0.5)' }}
               />
               <span
                 className="text-base font-bold leading-tight"
-                style={{ color: active ? NAVY : 'oklch(0.35 0.025 264)' }}
+                style={{ color: active ? GOLD : 'oklch(0.838 0.176 86.4 / 0.55)' }}
               >
                 {label}
               </span>
-              <span className="text-xs leading-tight hidden sm:block" style={{ color: 'oklch(0.55 0.015 264)' }}>
+              <span
+                className="text-xs leading-tight hidden sm:block"
+                style={{ color: active ? 'oklch(0.75 0.03 86)' : 'oklch(0.55 0.03 262)' }}
+              >
                 {sublabel}
               </span>
             </button>
