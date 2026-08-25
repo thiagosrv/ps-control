@@ -6,7 +6,7 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
   Search, UserCheck, LogOut, AlertCircle, Printer, ClipboardList,
-  X, ShieldCheck, HardHat, Package, User, Building2, Camera, UserPlus,
+  X, ShieldCheck, HardHat, User, Building2, Camera,
 } from 'lucide-react'
 import { useVisits, useVisitorSearch } from '@/hooks/useVisits'
 import { useVisitPhotos } from '@/hooks/useVisitPhotos'
@@ -20,37 +20,20 @@ import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { Visitor, CompanyUser, Visit } from '@/types/app.types'
-
-// Flags específicas de obra (ativadas via env var no deploy — não afetam as demais obras)
-const HIDE_DELIVERY_TYPE = import.meta.env.VITE_HIDE_DELIVERY_TYPE === 'true'
-const COMPANY_AUTOCOMPLETE = import.meta.env.VITE_COMPANY_AUTOCOMPLETE === 'true'
 
 const GOLD = 'oklch(0.838 0.176 86.4)'
 const NAVY = 'oklch(0.188 0.075 262)'
 
-type VisitTypeUI = 'worker' | 'unregistered_worker' | 'delivery' | 'visitor'
+type VisitTypeUI = 'credenciado' | 'visitor'
 
-const ALL_VISIT_TYPES: { id: VisitTypeUI; label: string; sublabel: string; icon: React.ElementType }[] = [
-  { id: 'worker',             label: 'Trabalhador Cadastrado',    sublabel: 'Buscar no sistema',           icon: HardHat  },
-  { id: 'unregistered_worker',label: 'Trabalhador Não Registrado',sublabel: 'Sem cadastro prévio',         icon: UserPlus },
-  { id: 'delivery',           label: 'Entrega / Coleta',          sublabel: 'Fornecedor / Transportadora', icon: Package  },
-  { id: 'visitor',            label: 'Visitante',                 sublabel: 'Reunião / Vistoria / Fiscal', icon: User     },
+const VISIT_TYPES: { id: VisitTypeUI; label: string; sublabel: string; icon: React.ElementType }[] = [
+  { id: 'credenciado', label: 'Credenciado', sublabel: 'Trabalhador da obra — buscar ou cadastrar novo', icon: HardHat },
+  { id: 'visitor',     label: 'Visitante',    sublabel: 'Reunião, vistoria, fiscal, entrega ou coleta',  icon: User    },
 ]
 
-const VISIT_TYPES = HIDE_DELIVERY_TYPE
-  ? ALL_VISIT_TYPES.filter((t) => t.id !== 'delivery')
-  : ALL_VISIT_TYPES
-
-const VISIT_TYPE_DB: Record<VisitTypeUI, import('@/types/database.types').VisitorType> = {
-  worker:             'employee',
-  unregistered_worker:'unregistered',
-  delivery:           'supplier',
-  visitor:            'other',
-}
-
 const EMPTY_FORM: VisitFormValues = {
+  visit_kind: 'credenciado',
   visitor_name: '',
   documento: '',
   visitor_company: '',
@@ -62,23 +45,71 @@ const EMPTY_FORM: VisitFormValues = {
   epi_verificado: false,
 }
 
+// Input de texto com sugestões filtradas 100% no cliente sobre uma lista já carregada.
+// Digitação livre continua sempre possível — a lista é só um atalho de preenchimento rápido.
+function TextAutocomplete({
+  value, onChange, options, placeholder, icon: Icon = Building2,
+}: {
+  value: string
+  onChange: (v: string) => void
+  options: string[]
+  placeholder?: string
+  icon?: React.ElementType
+}) {
+  const [open, setOpen] = useState(false)
+  const query = normalizeText(value)
+  const matches = (query.length > 0
+    ? options.filter((o) => normalizeText(o).includes(query))
+    : options
+  ).slice(0, 6)
+
+  return (
+    <div className="relative">
+      <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+      <Input
+        placeholder={placeholder}
+        className="h-12 pl-9"
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setOpen(true) }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        autoComplete="off"
+      />
+      {open && matches.length > 0 && (
+        <div className="absolute top-full left-0 right-0 z-50 bg-white border rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
+          {matches.map((m) => (
+            <button
+              key={m}
+              type="button"
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-sm font-semibold text-slate-800 hover:bg-yellow-50 border-b last:border-0"
+              onMouseDown={(ev) => ev.preventDefault()}
+              onClick={() => { onChange(m); setOpen(false) }}
+            >
+              <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: GOLD }} />
+              {m}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function VisitsPage() {
   const { activeVisits, loading: visitsLoading, createVisit, endVisit } = useVisits()
   const { uploadPhoto } = useVisitPhotos()
-  const { search: searchUsers } = useCompanyUsers()
+  const { companyUsers } = useCompanyUsers()
   const { searchVisitors } = useVisitorSearch()
   const { empreiteiras } = useEmpreiteiras()
 
-  const [visitType, setVisitType] = useState<VisitTypeUI>('worker')
+  const [visitType, setVisitType] = useState<VisitTypeUI>('credenciado')
   const [quickQuery, setQuickQuery] = useState('')
   const [quickResults, setQuickResults] = useState<Visitor[]>([])
   const [showQuickDropdown, setShowQuickDropdown] = useState(false)
   const [selectedVisitor, setSelectedVisitor] = useState<Visitor | null>(null)
   const [blacklistAlert, setBlacklistAlert] = useState('')
   const [userQuery, setUserQuery] = useState('')
-  const [userResults, setUserResults] = useState<CompanyUser[]>([])
   const [showUserDropdown, setShowUserDropdown] = useState(false)
-  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [endTarget, setEndTarget] = useState<Visit | null>(null)
   const [printVisit, setPrintVisit] = useState<Visit | null>(null)
@@ -92,7 +123,6 @@ export function VisitsPage() {
   const exitGalleryRef = useRef<HTMLInputElement>(null)
 
   const quickTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const userTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const form = useForm<VisitFormValues>({
     resolver: zodResolver(visitFormSchema),
@@ -126,8 +156,9 @@ export function VisitsPage() {
     if (visitor.funcao) form.setValue('funcao', visitor.funcao)
     if (visitor.empreiteira_id) form.setValue('empreiteira_id', visitor.empreiteira_id)
     // Detectar tipo automaticamente pelo perfil salvo
-    if (visitor.funcao || visitor.empreiteira_id) setVisitType('worker')
-    else if (visitor.company) setVisitType(HIDE_DELIVERY_TYPE ? 'visitor' : 'delivery')
+    const kind: VisitTypeUI = (visitor.funcao || visitor.empreiteira_id || visitor.company) ? 'credenciado' : 'visitor'
+    setVisitType(kind)
+    form.setValue('visit_kind', kind)
   }
 
   function clearVisitor() {
@@ -137,17 +168,11 @@ export function VisitsPage() {
     setUserQuery('')
   }
 
-  // ── Busca de responsável ──────────────────────────────────────
+  // ── Busca de responsável (lista já carregada — filtro instantâneo) ──
   function handleUserSearch(value: string) {
     setUserQuery(value)
-    if (!value) { form.setValue('company_user_id', ''); return }
-    clearTimeout(userTimerRef.current)
-    if (value.length < 3) { setUserResults([]); setShowUserDropdown(false); return }
-    userTimerRef.current = setTimeout(async () => {
-      const results = await searchUsers(value)
-      setUserResults(results)
-      setShowUserDropdown(true)
-    }, 300)
+    form.setValue('company_user_id', '')
+    setShowUserDropdown(true)
   }
 
   function selectUser(user: CompanyUser) {
@@ -159,6 +184,7 @@ export function VisitsPage() {
   // ── Troca de tipo ─────────────────────────────────────────────
   function switchType(type: VisitTypeUI) {
     setVisitType(type)
+    form.setValue('visit_kind', type)
     // Limpa apenas campos específicos do tipo anterior
     form.setValue('funcao', '')
     form.setValue('empreiteira_id', '')
@@ -211,7 +237,9 @@ export function VisitsPage() {
   async function onSubmit(values: VisitFormValues) {
     if (blacklistAlert) return
     setSubmitting(true)
-    const { error, visitId } = await createVisit(values, selectedVisitor?.id, VISIT_TYPE_DB[visitType])
+    const dbType: import('@/types/database.types').VisitorType =
+      visitType === 'visitor' ? 'other' : (selectedVisitor ? 'employee' : 'unregistered')
+    const { error, visitId } = await createVisit(values, selectedVisitor?.id, dbType)
     if (error) {
       toast.error('Erro ao registrar: ' + (error as { message?: string }).message)
     } else {
@@ -255,7 +283,7 @@ export function VisitsPage() {
       <PageHeader title="Registro de Entrada" description="Registre a entrada e saída de pessoas" />
 
       {/* ── SELETOR DE TIPO ─────────────────────────────────────── */}
-      <div className={VISIT_TYPES.length === 3 ? 'grid grid-cols-3 gap-2' : 'grid grid-cols-2 gap-2'}>
+      <div className="grid grid-cols-2 gap-3">
         {VISIT_TYPES.map(({ id, label, sublabel, icon: Icon }) => {
           const active = visitType === id
           return (
@@ -263,18 +291,18 @@ export function VisitsPage() {
               key={id}
               type="button"
               onClick={() => switchType(id)}
-              className="flex flex-col items-center gap-2 rounded-xl border-2 px-3 py-4 transition-all text-center active:scale-95"
+              className="flex flex-col items-center gap-2 rounded-xl border-2 px-3 py-5 transition-all text-center active:scale-95"
               style={{
                 borderColor: active ? GOLD : 'oklch(0.908 0.008 264)',
                 backgroundColor: active ? 'oklch(0.97 0.04 86)' : 'white',
               }}
             >
               <Icon
-                className="h-6 w-6"
+                className="h-8 w-8"
                 style={{ color: active ? 'oklch(0.55 0.14 86)' : 'oklch(0.52 0.018 264)' }}
               />
               <span
-                className="text-sm font-bold leading-tight"
+                className="text-base font-bold leading-tight"
                 style={{ color: active ? NAVY : 'oklch(0.35 0.025 264)' }}
               >
                 {label}
@@ -288,7 +316,6 @@ export function VisitsPage() {
       </div>
 
       {/* ── BUSCA RÁPIDA ────────────────────────────────────────── */}
-      {visitType !== 'unregistered_worker' && (
       <div className="rounded-xl border-2 bg-white p-4 shadow-sm" style={{ borderColor: GOLD }}>
         <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: NAVY }}>
           Buscar pessoa já cadastrada
@@ -363,7 +390,6 @@ export function VisitsPage() {
           </div>
         )}
       </div>
-      )}
 
       {/* ── FORMULÁRIO ──────────────────────────────────────────── */}
       <Card className="shadow-sm">
@@ -394,62 +420,40 @@ export function VisitsPage() {
                 )} />
               </div>
 
-              {/* ── TRABALHADOR (cadastrado ou não) ── */}
-              {(visitType === 'worker' || visitType === 'unregistered_worker') && (
+              {/* ── CREDENCIADO ── */}
+              {visitType === 'credenciado' && (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField control={form.control} name="funcao" render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-semibold text-slate-700">Função</FormLabel>
-                        {visitType === 'unregistered_worker' ? (
-                          <FormControl>
-                            <Input placeholder="Ex: Pedreiro, Eletricista, Montador…" className="h-12" {...field} />
-                          </FormControl>
-                        ) : (
-                          <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                            <FormControl>
-                              <SelectTrigger className="h-12"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {FUNCOES_OBRA.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        )}
+                        <FormLabel className="font-semibold text-slate-700">Função *</FormLabel>
+                        <FormControl>
+                          <TextAutocomplete
+                            value={field.value ?? ''}
+                            onChange={field.onChange}
+                            options={FUNCOES_OBRA}
+                            placeholder="Ex: Pedreiro, Eletricista…"
+                            icon={HardHat}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
 
-                    {visitType === 'worker' ? (
-                      <FormField control={form.control} name="empreiteira_id" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="font-semibold text-slate-700">Empreiteira</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                            <FormControl>
-                              <SelectTrigger className="h-12"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {empreiteiras.filter((e) => e.active).map((e) => (
-                                <SelectItem key={e.id} value={e.id}>{e.razao_social}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                    ) : (
-                      <FormField control={form.control} name="visitor_company" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="font-semibold text-slate-700">Empresa</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                              <Input placeholder="Nome da empresa" className="h-12 pl-9" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                    )}
+                    <FormField control={form.control} name="visitor_company" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-semibold text-slate-700">Empresa *</FormLabel>
+                        <FormControl>
+                          <TextAutocomplete
+                            value={field.value ?? ''}
+                            onChange={field.onChange}
+                            options={empreiteiras.filter((e) => e.active).map((e) => e.razao_social)}
+                            placeholder="Nome da empresa"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
                   </div>
 
                   <FormField control={form.control} name="atividade" render={({ field }) => (
@@ -464,127 +468,69 @@ export function VisitsPage() {
                 </>
               )}
 
-              {/* ── ENTREGA / COLETA ── */}
-              {visitType === 'delivery' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="visitor_company" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-semibold text-slate-700">Empresa</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                          <Input placeholder="Nome da empresa" className="h-12 pl-9" {...field} />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={form.control} name="vehicle_plate" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-semibold text-slate-700">Placa do veículo</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="ABC1D23"
-                          className="h-11 font-mono uppercase"
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
-              )}
-
               {/* ── VISITANTE ── */}
               {visitType === 'visitor' && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="visitor_company" render={({ field }) => {
-                      const query = field.value ?? ''
-                      const companyMatches = COMPANY_AUTOCOMPLETE && normalizeText(query).length >= 2
-                        ? empreiteiras
-                            .filter((e) => e.active && normalizeText(e.razao_social).includes(normalizeText(query)))
-                            .slice(0, 6)
-                        : []
+                    <FormField control={form.control} name="visitor_company" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-semibold text-slate-700">Empresa *</FormLabel>
+                        <FormControl>
+                          <TextAutocomplete
+                            value={field.value ?? ''}
+                            onChange={field.onChange}
+                            options={empreiteiras.filter((e) => e.active).map((e) => e.razao_social)}
+                            placeholder="Empresa do visitante"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+
+                    <FormField control={form.control} name="company_user_id" render={() => {
+                      const userMatches = (userQuery.trim().length > 0
+                        ? companyUsers.filter((u) => normalizeText(u.full_name).includes(normalizeText(userQuery)))
+                        : companyUsers
+                      ).slice(0, 8)
                       return (
                         <FormItem>
-                          <FormLabel className="font-semibold text-slate-700">Empresa</FormLabel>
-                          <FormControl>
+                          <FormLabel className="font-semibold text-slate-700">Pessoa a visitar *</FormLabel>
+                          <div className="relative">
                             <div className="relative">
-                              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                               <Input
-                                placeholder="Empresa do visitante"
+                                placeholder="Buscar responsável…"
                                 className="h-12 pl-9"
-                                {...field}
-                                onChange={(e) => { field.onChange(e.target.value); setShowCompanyDropdown(true) }}
-                                onFocus={() => setShowCompanyDropdown(true)}
-                                onBlur={() => setTimeout(() => setShowCompanyDropdown(false), 150)}
-                                autoComplete="off"
+                                value={userQuery}
+                                onChange={(e) => handleUserSearch(e.target.value)}
+                                onFocus={() => setShowUserDropdown(true)}
+                                onBlur={() => setTimeout(() => setShowUserDropdown(false), 150)}
                               />
-                              {COMPANY_AUTOCOMPLETE && showCompanyDropdown && companyMatches.length > 0 && (
-                                <div className="absolute top-full left-0 right-0 z-50 bg-white border rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
-                                  {companyMatches.map((e) => (
-                                    <button
-                                      key={e.id}
-                                      type="button"
-                                      className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-sm font-semibold text-slate-800 hover:bg-yellow-50 border-b last:border-0"
-                                      onMouseDown={(ev) => ev.preventDefault()}
-                                      onClick={() => { field.onChange(e.razao_social); setShowCompanyDropdown(false) }}
-                                    >
-                                      <Building2 className="h-3.5 w-3.5 shrink-0" style={{ color: GOLD }} />
-                                      {e.razao_social}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
                             </div>
-                          </FormControl>
+                            {showUserDropdown && userMatches.length > 0 && (
+                              <div className="absolute top-full left-0 right-0 z-50 bg-white border rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
+                                {userMatches.map((u) => (
+                                  <button key={u.id} type="button"
+                                    className="w-full flex flex-col px-4 py-2.5 text-left hover:bg-yellow-50 border-b last:border-0"
+                                    onMouseDown={(ev) => ev.preventDefault()}
+                                    onClick={() => selectUser(u)}>
+                                    <p className="text-sm font-semibold text-slate-800">{u.full_name}</p>
+                                    <p className="text-xs text-slate-500">{u.department?.name ?? '—'}</p>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )
                     }} />
-
-                    <FormField control={form.control} name="company_user_id" render={() => (
-                      <FormItem>
-                        <FormLabel className="font-semibold text-slate-700">Pessoa a visitar</FormLabel>
-                        <div className="relative">
-                          <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input
-                              placeholder="Buscar responsável…"
-                              className="h-12 pl-9"
-                              value={userQuery}
-                              onChange={(e) => handleUserSearch(e.target.value)}
-                              onFocus={() => userResults.length > 0 && setShowUserDropdown(true)}
-                              onBlur={() => setTimeout(() => setShowUserDropdown(false), 150)}
-                            />
-                          </div>
-                          {showUserDropdown && userResults.length > 0 && (
-                            <div className="absolute top-full left-0 right-0 z-50 bg-white border rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
-                              {userResults.map((u) => (
-                                <button key={u.id} type="button"
-                                  className="w-full flex flex-col px-4 py-2.5 text-left hover:bg-yellow-50 border-b last:border-0"
-                                  onClick={() => selectUser(u)}>
-                                  <p className="text-sm font-semibold text-slate-800">{u.full_name}</p>
-                                  <p className="text-xs text-slate-500">{u.department?.name ?? '—'}</p>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField control={form.control} name="atividade" render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-semibold text-slate-700">
-                          Motivo da visita <span className="font-normal text-slate-400">(opcional)</span>
-                        </FormLabel>
+                        <FormLabel className="font-semibold text-slate-700">Motivo da visita *</FormLabel>
                         <FormControl>
                           <Input placeholder="Ex: Reunião, Vistoria, Entrega…" className="h-12" {...field} />
                         </FormControl>
@@ -612,8 +558,8 @@ export function VisitsPage() {
                 </div>
               )}
 
-              {/* Placa extra para trabalhador */}
-              {(visitType === 'worker' || visitType === 'unregistered_worker') && (
+              {/* Placa extra para credenciado */}
+              {visitType === 'credenciado' && (
                 <FormField control={form.control} name="vehicle_plate" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="font-semibold text-slate-700">Placa do veículo <span className="font-normal text-slate-400">(opcional)</span></FormLabel>

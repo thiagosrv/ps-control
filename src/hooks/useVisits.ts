@@ -108,7 +108,8 @@ export function useVisits() {
       .order('checked_in_at', { ascending: false })
 
     if (filters.plate) query = query.ilike('vehicle_plate', `%${filters.plate}%`)
-    if (filters.visitor_type) query = query.eq('visitor_type', filters.visitor_type as Visit['visitor_type'])
+    if (filters.visitor_type === 'credenciado') query = query.in('visitor_type', ['employee', 'unregistered'])
+    else if (filters.visitor_type === 'visitante') query = query.in('visitor_type', ['other', 'supplier', 'contractor'])
     if (filters.date_from) query = query.gte('checked_in_at', filters.date_from)
     if (filters.date_to) query = query.lte('checked_in_at', filters.date_to + 'T23:59:59')
 

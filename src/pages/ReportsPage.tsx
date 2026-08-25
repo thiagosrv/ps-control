@@ -138,10 +138,8 @@ export function ReportsPage() {
                       <FormControl><SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger></FormControl>
                       <SelectContent>
                         <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="employee">Trabalhador Cadastrado</SelectItem>
-                        <SelectItem value="unregistered">Trabalhador Não Registrado</SelectItem>
-                        <SelectItem value="supplier">Entrega / Coleta</SelectItem>
-                        <SelectItem value="other">Visitante</SelectItem>
+                        <SelectItem value="credenciado">Credenciado</SelectItem>
+                        <SelectItem value="visitante">Visitante</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -211,7 +209,24 @@ export function ReportsPage() {
                     results.map((v) => (
                       <TableRow key={v.id}>
                         <TableCell className="font-medium">{v.visitor?.full_name}</TableCell>
-                        <TableCell className="text-sm text-slate-500">{formatVisitorType(v.visitor_type ?? '')}</TableCell>
+                        <TableCell>
+                          {(() => {
+                            const isCredenciado = v.visitor_type === 'employee' || v.visitor_type === 'unregistered'
+                            return (
+                              <div>
+                                <Badge
+                                  variant="outline"
+                                  className={isCredenciado
+                                    ? 'text-xs text-blue-700 border-blue-300 bg-blue-50'
+                                    : 'text-xs text-slate-600 border-slate-300 bg-slate-50'}
+                                >
+                                  {isCredenciado ? 'Credenciado' : 'Visitante'}
+                                </Badge>
+                                <p className="text-xs text-slate-400 mt-1">{formatVisitorType(v.visitor_type ?? '')}</p>
+                              </div>
+                            )
+                          })()}
+                        </TableCell>
                         <TableCell className="text-sm">{v.visitor?.cpf ? formatCPF(v.visitor.cpf) : (v.visitor?.rg ?? '—')}</TableCell>
                         <TableCell className="text-sm">{v.visitor?.funcao ?? '—'}</TableCell>
                         <TableCell className="text-sm">

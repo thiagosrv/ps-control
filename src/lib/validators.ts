@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 export const visitFormSchema = z.object({
+  visit_kind: z.enum(['credenciado', 'visitor']),
   visitor_name: z.string().min(3, 'Nome deve ter ao menos 3 caracteres'),
   documento: z.string().optional(),
   visitor_company: z.string().optional(),
@@ -10,6 +11,15 @@ export const visitFormSchema = z.object({
   atividade: z.string().optional(),
   vehicle_plate: z.string().optional(),
   epi_verificado: z.boolean(),
+}).superRefine((data, ctx) => {
+  if (data.visit_kind === 'credenciado') {
+    if (!data.funcao?.trim()) ctx.addIssue({ code: 'custom', path: ['funcao'], message: 'Função é obrigatória' })
+    if (!data.visitor_company?.trim()) ctx.addIssue({ code: 'custom', path: ['visitor_company'], message: 'Empresa é obrigatória' })
+  } else {
+    if (!data.visitor_company?.trim()) ctx.addIssue({ code: 'custom', path: ['visitor_company'], message: 'Empresa é obrigatória' })
+    if (!data.atividade?.trim()) ctx.addIssue({ code: 'custom', path: ['atividade'], message: 'Motivo da visita é obrigatório' })
+    if (!data.company_user_id?.trim()) ctx.addIssue({ code: 'custom', path: ['company_user_id'], message: 'Selecione a pessoa a visitar' })
+  }
 })
 
 export type VisitFormValues = z.infer<typeof visitFormSchema>
@@ -69,7 +79,7 @@ export const reportFilterSchema = z.object({
   funcao: z.string().optional(),
   empreiteira_id: z.string().optional(),
   plate: z.string().optional(),
-  visitor_type: z.enum(['employee', 'supplier', 'contractor', 'other', 'all', '']).optional(),
+  visitor_type: z.enum(['credenciado', 'visitante', 'all', '']).optional(),
   date_from: z.string().optional(),
   date_to: z.string().optional(),
 })
