@@ -63,5 +63,25 @@ export function useCompanyUsers() {
     return error
   }
 
-  return { companyUsers, loading, search, create, update, remove, refetch: fetch }
+  // Reaproveita um responsável já cadastrado (match por nome) ou cria um novo
+  // "rápido" (sem departamento/contato) — mesmo padrão usado para visitantes,
+  // permite digitar um nome ou setor novo e ele fica disponível para próximas buscas.
+  async function findOrCreate(name: string): Promise<{ id: string | null; error: Error | null }> {
+    const clean = name.trim()
+    if (!clean) return { id: null, error: null }
+
+    const existing = companyUsers.find((u) => u.full_name.trim().toLowerCase() === clean.toLowerCase())
+    if (existing) return { id: existing.id, error: null }
+
+    const { data, error } = await supabase
+      .from('company_users')
+      .insert({ full_name: clean, active: true })
+      .select('id')
+      .single()
+    if (error) return { id: null, error: error as Error }
+    await fetch()
+    return { id: (data as { id: string }).id, error: null }
+  }
+
+  return { companyUsers, loading, search, create, update, remove, findOrCreate, refetch: fetch }
 }

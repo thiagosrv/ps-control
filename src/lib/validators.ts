@@ -8,6 +8,7 @@ export const visitFormSchema = z.object({
   funcao: z.string().optional(),
   empreiteira_id: z.string().optional(),
   company_user_id: z.string().optional(),
+  visited_person: z.string().optional(),
   atividade: z.string().optional(),
   vehicle_plate: z.string().optional(),
   epi_verificado: z.boolean(),
@@ -18,7 +19,7 @@ export const visitFormSchema = z.object({
   } else {
     if (!data.visitor_company?.trim()) ctx.addIssue({ code: 'custom', path: ['visitor_company'], message: 'Empresa é obrigatória' })
     if (!data.atividade?.trim()) ctx.addIssue({ code: 'custom', path: ['atividade'], message: 'Motivo da visita é obrigatório' })
-    if (!data.company_user_id?.trim()) ctx.addIssue({ code: 'custom', path: ['company_user_id'], message: 'Selecione a pessoa a visitar' })
+    if (!data.visited_person?.trim()) ctx.addIssue({ code: 'custom', path: ['visited_person'], message: 'Informe a pessoa ou setor a visitar' })
   }
 })
 

@@ -40,6 +40,7 @@ const EMPTY_FORM: VisitFormValues = {
   funcao: '',
   empreiteira_id: '',
   company_user_id: '',
+  visited_person: '',
   atividade: '',
   vehicle_plate: '',
   epi_verificado: false,
@@ -98,7 +99,7 @@ function TextAutocomplete({
 export function VisitsPage() {
   const { activeVisits, loading: visitsLoading, createVisit, endVisit } = useVisits()
   const { uploadPhoto } = useVisitPhotos()
-  const { companyUsers } = useCompanyUsers()
+  const { companyUsers, findOrCreate: findOrCreateCompanyUser } = useCompanyUsers()
   const { searchVisitors } = useVisitorSearch()
   const { empreiteiras } = useEmpreiteiras()
 
@@ -172,6 +173,7 @@ export function VisitsPage() {
   function handleUserSearch(value: string) {
     setUserQuery(value)
     form.setValue('company_user_id', '')
+    form.setValue('visited_person', value)
     setShowUserDropdown(true)
   }
 
@@ -179,6 +181,7 @@ export function VisitsPage() {
     setUserQuery(user.full_name)
     setShowUserDropdown(false)
     form.setValue('company_user_id', user.id)
+    form.setValue('visited_person', user.full_name)
   }
 
   // ── Troca de tipo ─────────────────────────────────────────────
@@ -190,6 +193,7 @@ export function VisitsPage() {
     form.setValue('empreiteira_id', '')
     form.setValue('atividade', '')
     form.setValue('company_user_id', '')
+    form.setValue('visited_person', '')
     form.setValue('epi_verificado', false)
     setUserQuery('')
   }
@@ -237,6 +241,17 @@ export function VisitsPage() {
   async function onSubmit(values: VisitFormValues) {
     if (blacklistAlert) return
     setSubmitting(true)
+
+    if (visitType === 'visitor' && !values.company_user_id && values.visited_person?.trim()) {
+      const { id, error: personError } = await findOrCreateCompanyUser(values.visited_person)
+      if (personError) {
+        toast.error('Erro ao registrar pessoa/setor visitado')
+        setSubmitting(false)
+        return
+      }
+      values.company_user_id = id ?? ''
+    }
+
     const dbType: import('@/types/database.types').VisitorType =
       visitType === 'visitor' ? 'other' : (selectedVisitor ? 'employee' : 'unregistered')
     const { error, visitId } = await createVisit(values, selectedVisitor?.id, dbType)
@@ -487,19 +502,19 @@ export function VisitsPage() {
                       </FormItem>
                     )} />
 
-                    <FormField control={form.control} name="company_user_id" render={() => {
+                    <FormField control={form.control} name="visited_person" render={() => {
                       const userMatches = (userQuery.trim().length > 0
                         ? companyUsers.filter((u) => normalizeText(u.full_name).includes(normalizeText(userQuery)))
                         : companyUsers
                       ).slice(0, 8)
                       return (
                         <FormItem>
-                          <FormLabel className="font-semibold text-slate-700">Pessoa a visitar *</FormLabel>
+                          <FormLabel className="font-semibold text-slate-700">Pessoa ou setor a visitar *</FormLabel>
                           <div className="relative">
                             <div className="relative">
                               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                               <Input
-                                placeholder="Buscar responsável…"
+                                placeholder="Buscar ou digitar nome/setor novo…"
                                 className="h-12 pl-9"
                                 value={userQuery}
                                 onChange={(e) => handleUserSearch(e.target.value)}
