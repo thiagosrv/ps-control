@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, HardHat } from 'lucide-react'
 import { useDepartments } from '@/hooks/useDepartments'
 import { departmentSchema, type DepartmentFormValues } from '@/lib/validators'
+import { translateError } from '@/lib/errors'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { DataTable, type Column } from '@/components/shared/DataTable'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
@@ -44,7 +45,7 @@ export function DepartmentsPage() {
       ? await update(editing.id, values)
       : await create(values)
     if (error) {
-      toast.error('Erro ao salvar: ' + (error as { message?: string }).message)
+      toast.error('Erro ao salvar: ' + translateError(error))
     } else {
       toast.success(editing ? 'Frente atualizada' : 'Frente criada')
       setDialogOpen(false)
@@ -57,7 +58,7 @@ export function DepartmentsPage() {
     setSaving(true)
     const error = await remove(deleteTarget.id)
     if (error) {
-      toast.error('Erro ao excluir: ' + (error as { message?: string }).message)
+      toast.error('Erro ao excluir: ' + translateError(error))
     } else {
       toast.success('Frente excluída')
     }

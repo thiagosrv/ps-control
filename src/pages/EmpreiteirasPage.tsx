@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, Building2 } from 'lucide-react'
 import { useEmpreiteiras } from '@/hooks/useEmpreiteiras'
 import { empreiteiraSchema, type EmpreiteiraFormValues } from '@/lib/validators'
+import { translateError } from '@/lib/errors'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { DataTable, type Column } from '@/components/shared/DataTable'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
@@ -50,7 +51,7 @@ export function EmpreiteirasPage() {
       ? await update(editing.id, values)
       : await create(values)
     if (error) {
-      toast.error('Erro ao salvar: ' + (error as { message?: string }).message)
+      toast.error('Erro ao salvar: ' + translateError(error))
     } else {
       toast.success(editing ? 'Empreiteira atualizada' : 'Empreiteira cadastrada')
       setDialogOpen(false)
@@ -62,7 +63,7 @@ export function EmpreiteirasPage() {
     if (!deleteTarget) return
     setSaving(true)
     const error = await remove(deleteTarget.id)
-    if (error) toast.error('Erro ao excluir: ' + (error as { message?: string }).message)
+    if (error) toast.error('Erro ao excluir: ' + translateError(error))
     else toast.success('Empreiteira excluída')
     setDeleteTarget(null)
     setSaving(false)

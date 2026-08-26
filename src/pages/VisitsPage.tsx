@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
+import { translateError } from '@/lib/errors'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
@@ -256,7 +257,7 @@ export function VisitsPage() {
       visitType === 'visitor' ? 'other' : (selectedVisitor ? 'employee' : 'unregistered')
     const { error, visitId } = await createVisit(values, selectedVisitor?.id, dbType)
     if (error) {
-      toast.error('Erro ao registrar: ' + (error as { message?: string }).message)
+      toast.error('Erro ao registrar: ' + translateError(error))
     } else {
       if (entryPhoto && visitId) {
         const { error: photoErr } = await uploadPhoto(visitId, entryPhoto, 'entrada')

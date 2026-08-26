@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Lock } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { changePasswordSchema, type ChangePasswordValues } from '@/lib/validators'
+import { translateError } from '@/lib/errors'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
@@ -27,7 +28,7 @@ export function ChangePasswordModal({ userId, onSuccess }: Props) {
     setSaving(true)
     const { error: authError } = await supabase.auth.updateUser({ password: values.password })
     if (authError) {
-      toast.error('Erro ao alterar senha: ' + authError.message)
+      toast.error('Erro ao alterar senha: ' + translateError(authError))
       setSaving(false)
       return
     }

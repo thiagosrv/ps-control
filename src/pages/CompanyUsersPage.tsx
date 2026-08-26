@@ -6,6 +6,7 @@ import { Plus, Pencil, Trash2, HardHat } from 'lucide-react'
 import { useCompanyUsers } from '@/hooks/useCompanyUsers'
 import { useDepartments } from '@/hooks/useDepartments'
 import { companyUserSchema, type CompanyUserFormValues } from '@/lib/validators'
+import { translateError } from '@/lib/errors'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { DataTable, type Column } from '@/components/shared/DataTable'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
@@ -54,7 +55,7 @@ export function CompanyUsersPage() {
     setSaving(true)
     const error = editing ? await update(editing.id, values) : await create(values)
     if (error) {
-      toast.error('Erro ao salvar: ' + (error as { message?: string }).message)
+      toast.error('Erro ao salvar: ' + translateError(error))
     } else {
       toast.success(editing ? 'Responsável atualizado' : 'Responsável criado')
       setDialogOpen(false)
