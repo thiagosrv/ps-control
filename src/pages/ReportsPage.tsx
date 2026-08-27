@@ -6,7 +6,6 @@ import { format } from 'date-fns'
 import { Search, FileDown, FileText } from 'lucide-react'
 import { useVisits } from '@/hooks/useVisits'
 import { useAuth } from '@/hooks/useAuth'
-import { useEmpreiteiras } from '@/hooks/useEmpreiteiras'
 import { reportFilterSchema, type ReportFilterValues } from '@/lib/validators'
 import { formatCPF, formatVisitorType } from '@/lib/utils'
 import { generateVisitsPDF } from '@/lib/pdf'
@@ -24,7 +23,6 @@ import type { Visit, Visitor } from '@/types/app.types'
 export function ReportsPage() {
   const { fetchForReport } = useVisits()
   const { profile } = useAuth()
-  const { empreiteiras } = useEmpreiteiras()
   const [results, setResults] = useState<Visit[]>([])
   const [searched, setSearched] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -38,7 +36,7 @@ export function ReportsPage() {
       plate: '',
       visitor_type: '',
       funcao: '',
-      empreiteira_id: '',
+      company: '',
       date_from: '',
       date_to: '',
     },
@@ -46,12 +44,9 @@ export function ReportsPage() {
 
   async function onSearch(values: ReportFilterValues) {
     setLoading(true)
-    const empreiteira = empreiteiras.find((e) => e.id === values.empreiteira_id)
     const { data, error } = await fetchForReport({
       ...values,
       visitor_type: values.visitor_type === 'all' ? '' : values.visitor_type,
-      empreiteira_id: values.empreiteira_id === 'all' ? '' : values.empreiteira_id,
-      empreiteira_nome: empreiteira?.razao_social,
     })
     if (error) toast.error('Erro ao buscar dados')
     else setResults(data)
@@ -117,18 +112,10 @@ export function ReportsPage() {
                     <FormControl><Input placeholder="Ex: Pedreiro, Eletricista..." {...field} /></FormControl>
                   </FormItem>
                 )} />
-                <FormField control={form.control} name="empreiteira_id" render={({ field }) => (
+                <FormField control={form.control} name="company" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Empreiteira</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        <SelectItem value="all">Todas</SelectItem>
-                        {empreiteiras.map((e) => (
-                          <SelectItem key={e.id} value={e.id}>{e.razao_social}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Empresa</FormLabel>
+                    <FormControl><Input placeholder="Nome da empresa" {...field} /></FormControl>
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="visitor_type" render={({ field }) => (

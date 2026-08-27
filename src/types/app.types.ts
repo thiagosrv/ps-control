@@ -53,6 +53,7 @@ export interface Visitor {
   epi_ok: boolean
   blacklisted: boolean
   blacklist_reason: string | null
+  status: 'autorizado' | 'nao_autorizado'
 }
 
 export interface Vehicle {
@@ -77,6 +78,7 @@ export interface Visit {
   checked_out_at: string | null
   notes: string | null
   badge_printed: boolean
+  authorized_by: string | null
   visitor?: Visitor
   company_user?: CompanyUser & { department?: Department }
 }

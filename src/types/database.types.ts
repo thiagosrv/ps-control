@@ -152,6 +152,7 @@ export interface Database {
           epi_ok: boolean
           blacklisted: boolean
           blacklist_reason: string | null
+          status: 'autorizado' | 'nao_autorizado'
           created_at: string
           updated_at: string
         }
@@ -168,6 +169,7 @@ export interface Database {
           epi_ok?: boolean
           blacklisted?: boolean
           blacklist_reason?: string | null
+          status?: 'autorizado' | 'nao_autorizado'
         }
         Update: {
           id?: string
@@ -182,6 +184,7 @@ export interface Database {
           epi_ok?: boolean
           blacklisted?: boolean
           blacklist_reason?: string | null
+          status?: 'autorizado' | 'nao_autorizado'
         }
         Relationships: [
           { foreignKeyName: 'visitors_empreiteira_id_fkey'; columns: ['empreiteira_id']; referencedRelation: 'empreiteiras'; referencedColumns: ['id'] }
@@ -227,6 +230,7 @@ export interface Database {
           checked_out_at: string | null
           notes: string | null
           badge_printed: boolean
+          authorized_by: string | null
           created_at: string
           updated_at: string
         }
@@ -244,6 +248,7 @@ export interface Database {
           checked_out_at?: string | null
           notes?: string | null
           badge_printed?: boolean
+          authorized_by?: string | null
         }
         Update: {
           id?: string
@@ -259,6 +264,7 @@ export interface Database {
           checked_out_at?: string | null
           notes?: string | null
           badge_printed?: boolean
+          authorized_by?: string | null
         }
         Relationships: [
           { foreignKeyName: 'visits_visitor_id_fkey'; columns: ['visitor_id']; referencedRelation: 'visitors'; referencedColumns: ['id'] },

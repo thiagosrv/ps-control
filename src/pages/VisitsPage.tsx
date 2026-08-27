@@ -7,14 +7,14 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
   Search, UserCheck, LogOut, AlertCircle, Printer, ClipboardList,
-  X, ShieldCheck, HardHat, User, Building2, Camera,
+  X, ShieldCheck, HardHat, User, Building2, Camera, CheckCircle2, MessageCircle,
 } from 'lucide-react'
 import { useVisits, useVisitorSearch } from '@/hooks/useVisits'
 import { useVisitPhotos } from '@/hooks/useVisitPhotos'
 import { useCompanyUsers } from '@/hooks/useCompanyUsers'
 import { useEmpreiteiras } from '@/hooks/useEmpreiteiras'
 import { visitFormSchema, type VisitFormValues } from '@/lib/validators'
-import { FUNCOES_OBRA, normalizeText } from '@/lib/utils'
+import { normalizeText } from '@/lib/utils'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,17 +34,24 @@ const VISIT_TYPES: { id: VisitTypeUI; label: string; sublabel: string; icon: Rea
 ]
 
 const EMPTY_FORM: VisitFormValues = {
-  visit_kind: 'credenciado',
   visitor_name: '',
   documento: '',
   visitor_company: '',
-  funcao: '',
-  empreiteira_id: '',
   company_user_id: '',
   visited_person: '',
   atividade: '',
   vehicle_plate: '',
   epi_verificado: false,
+}
+
+const WHATSAPP_NUMBER = (import.meta.env.VITE_WHATSAPP_NUMBER as string | undefined)?.replace(/\D/g, '')
+
+function buildWhatsappUrl(authorizedByName: string, personName: string, company?: string) {
+  if (!WHATSAPP_NUMBER) return null
+  const greeting = authorizedByName.trim() ? `${authorizedByName.trim()}, ` : ''
+  const empresaTxt = company ? `, da empresa ${company},` : ''
+  const msg = `${greeting}estou com ${personName}${empresaTxt} na portaria. Posso liberar a entrada?`
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`
 }
 
 // Input de texto com sugestões filtradas 100% no cliente sobre uma lista já carregada.
@@ -97,8 +104,11 @@ function TextAutocomplete({
   )
 }
 
+type UnauthorizedTarget = { name: string; company?: string; confirm: (authorizedBy: string) => Promise<boolean> }
+type AuthorizedTarget = { visitor: Visitor }
+
 export function VisitsPage() {
-  const { activeVisits, loading: visitsLoading, createVisit, endVisit } = useVisits()
+  const { activeVisits, loading: visitsLoading, createVisit, checkIn, endVisit } = useVisits()
   const { uploadPhoto } = useVisitPhotos()
   const { companyUsers, findOrCreate: findOrCreateCompanyUser } = useCompanyUsers()
   const { searchVisitors } = useVisitorSearch()
@@ -113,6 +123,11 @@ export function VisitsPage() {
   const [userQuery, setUserQuery] = useState('')
   const [showUserDropdown, setShowUserDropdown] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [authorizedTarget, setAuthorizedTarget] = useState<AuthorizedTarget | null>(null)
+  const [confirmingAuthorized, setConfirmingAuthorized] = useState(false)
+  const [unauthorizedTarget, setUnauthorizedTarget] = useState<UnauthorizedTarget | null>(null)
+  const [authorizedByInput, setAuthorizedByInput] = useState('')
+  const [confirmingUnauthorized, setConfirmingUnauthorized] = useState(false)
   const [endTarget, setEndTarget] = useState<Visit | null>(null)
   const [printVisit, setPrintVisit] = useState<Visit | null>(null)
   const [entryPhoto, setEntryPhoto] = useState<File | null>(null)
@@ -143,7 +158,7 @@ export function VisitsPage() {
     }, 300)
   }
 
-  function selectVisitor(visitor: Visitor) {
+  function handleVisitorSelect(visitor: Visitor) {
     setBlacklistAlert('')
     setShowQuickDropdown(false)
     setQuickQuery('')
@@ -155,12 +170,53 @@ export function VisitsPage() {
     form.setValue('visitor_name', visitor.full_name)
     form.setValue('documento', visitor.cpf ?? visitor.rg ?? '')
     form.setValue('visitor_company', visitor.company ?? '')
-    if (visitor.funcao) form.setValue('funcao', visitor.funcao)
-    if (visitor.empreiteira_id) form.setValue('empreiteira_id', visitor.empreiteira_id)
-    // Detectar tipo automaticamente pelo perfil salvo
-    const kind: VisitTypeUI = (visitor.funcao || visitor.empreiteira_id || visitor.company) ? 'credenciado' : 'visitor'
-    setVisitType(kind)
-    form.setValue('visit_kind', kind)
+  }
+
+  function handleCredenciadoSelect(visitor: Visitor) {
+    setBlacklistAlert('')
+    setShowQuickDropdown(false)
+    setQuickQuery('')
+    if (visitor.blacklisted) {
+      setBlacklistAlert(`BLOQUEADO: ${visitor.blacklist_reason ?? 'sem motivo informado'}`)
+      return
+    }
+    if (visitor.status === 'autorizado') {
+      setAuthorizedTarget({ visitor })
+      return
+    }
+    setUnauthorizedTarget({
+      name: visitor.full_name,
+      company: visitor.company ?? undefined,
+      confirm: async (authorizedBy) => {
+        const { error } = await checkIn(visitor.id, 'unregistered', authorizedBy)
+        if (error) { toast.error('Erro ao registrar: ' + translateError(error)); return false }
+        toast.success('Entrada registrada!')
+        return true
+      },
+    })
+  }
+
+  async function confirmAuthorizedEntry() {
+    if (!authorizedTarget) return
+    setConfirmingAuthorized(true)
+    const { error } = await checkIn(authorizedTarget.visitor.id, 'employee')
+    if (error) toast.error('Erro ao registrar: ' + translateError(error))
+    else toast.success('Entrada registrada!')
+    setConfirmingAuthorized(false)
+    setAuthorizedTarget(null)
+  }
+
+  function closeUnauthorized() {
+    setUnauthorizedTarget(null)
+    setAuthorizedByInput('')
+  }
+
+  async function confirmUnauthorizedEntry() {
+    if (!unauthorizedTarget || !authorizedByInput.trim()) return
+    setConfirmingUnauthorized(true)
+    const ok = await unauthorizedTarget.confirm(authorizedByInput.trim())
+    setConfirmingUnauthorized(false)
+    if (ok) closeUnauthorized()
   }
 
   function clearVisitor() {
@@ -188,15 +244,15 @@ export function VisitsPage() {
   // ── Troca de tipo ─────────────────────────────────────────────
   function switchType(type: VisitTypeUI) {
     setVisitType(type)
-    form.setValue('visit_kind', type)
-    // Limpa apenas campos específicos do tipo anterior
-    form.setValue('funcao', '')
-    form.setValue('empreiteira_id', '')
-    form.setValue('atividade', '')
-    form.setValue('company_user_id', '')
-    form.setValue('visited_person', '')
-    form.setValue('epi_verificado', false)
+    form.reset(EMPTY_FORM)
+    setSelectedVisitor(null)
+    setQuickQuery('')
+    setQuickResults([])
+    setShowQuickDropdown(false)
+    setBlacklistAlert('')
     setUserQuery('')
+    setAuthorizedTarget(null)
+    closeUnauthorized()
   }
 
   function handleEntryPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -243,7 +299,7 @@ export function VisitsPage() {
     if (blacklistAlert) return
     setSubmitting(true)
 
-    if (visitType === 'visitor' && !values.company_user_id && values.visited_person?.trim()) {
+    if (!values.company_user_id && values.visited_person?.trim()) {
       const { id, error: personError } = await findOrCreateCompanyUser(values.visited_person)
       if (personError) {
         toast.error('Erro ao registrar pessoa/setor visitado')
@@ -253,21 +309,24 @@ export function VisitsPage() {
       values.company_user_id = id ?? ''
     }
 
-    const dbType: import('@/types/database.types').VisitorType =
-      visitType === 'visitor' ? 'other' : (selectedVisitor ? 'employee' : 'unregistered')
-    const { error, visitId } = await createVisit(values, selectedVisitor?.id, dbType)
-    if (error) {
-      toast.error('Erro ao registrar: ' + translateError(error))
-    } else {
-      if (entryPhoto && visitId) {
-        const { error: photoErr } = await uploadPhoto(visitId, entryPhoto, 'entrada')
-        if (photoErr) toast.error('Entrada registrada, mas erro ao salvar foto.')
-        else toast.success('Entrada registrada com foto!')
-      } else {
-        toast.success('Entrada registrada!')
-      }
-      resetForm()
-    }
+    const existingVisitorId = selectedVisitor?.id
+    setUnauthorizedTarget({
+      name: values.visitor_name,
+      company: values.visitor_company,
+      confirm: async (authorizedBy) => {
+        const { error, visitId } = await createVisit(values, existingVisitorId, 'other', authorizedBy)
+        if (error) { toast.error('Erro ao registrar: ' + translateError(error)); return false }
+        if (entryPhoto && visitId) {
+          const { error: photoErr } = await uploadPhoto(visitId, entryPhoto, 'entrada')
+          if (photoErr) toast.error('Entrada registrada, mas erro ao salvar foto.')
+          else toast.success('Entrada registrada com foto!')
+        } else {
+          toast.success('Entrada registrada!')
+        }
+        resetForm()
+        return true
+      },
+    })
     setSubmitting(false)
   }
 
@@ -370,16 +429,30 @@ export function VisitsPage() {
               {quickResults.map((v) => {
                 type VisitorWithEmp = Visitor & { empreiteira?: { razao_social: string } }
                 const emp = (v as VisitorWithEmp).empreiteira?.razao_social
+                const isAutorizado = v.status === 'autorizado'
                 return (
                   <button
                     key={v.id}
                     type="button"
                     className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-yellow-50 transition-colors border-b last:border-0"
-                    onClick={() => selectVisitor(v)}
+                    onClick={() => (visitType === 'credenciado' ? handleCredenciadoSelect(v) : handleVisitorSelect(v))}
                   >
                     <UserCheck className="h-5 w-5 shrink-0" style={{ color: GOLD }} />
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-800 truncate">{v.full_name}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{v.full_name}</p>
+                        {visitType === 'credenciado' && (
+                          isAutorizado ? (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: 'oklch(0.93 0.08 140)', color: 'oklch(0.38 0.14 140)' }}>
+                              AUTORIZADO
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 bg-slate-100 text-slate-500">
+                              NÃO CREDENCIADO
+                            </span>
+                          )
+                        )}
+                      </div>
                       <p className="text-xs text-slate-500 truncate">
                         {v.cpf ?? v.rg ?? 'Sem doc.'}
                         {v.funcao && <span className="ml-2">· {v.funcao}</span>}
@@ -413,15 +486,27 @@ export function VisitsPage() {
             </button>
           </div>
         )}
+
+        {visitType === 'credenciado' && !blacklistAlert && !authorizedTarget && !unauthorizedTarget && (
+          <div className="mt-3 rounded-lg px-4 py-3 text-center text-sm text-slate-400 border-2 border-dashed" style={{ borderColor: 'oklch(0.85 0.01 264)' }}>
+            Busque o nome ou documento acima para registrar a entrada.
+            {quickQuery.trim().length >= 2 && quickResults.length === 0 && (
+              <p className="mt-1.5 text-slate-500">
+                Não encontrado. Novos visitantes devem ser registrados na aba <strong>Visitante</strong>.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* ── FORMULÁRIO ──────────────────────────────────────────── */}
+      {/* ── FORMULÁRIO (apenas Visitante) ───────────────────────── */}
+      {visitType === 'visitor' && (
       <Card className="shadow-sm">
         <CardContent className="pt-5">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
-              {/* Campos comuns a todos os tipos */}
+              {/* Campos comuns */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField control={form.control} name="visitor_name" render={({ field }) => (
                   <FormItem>
@@ -444,56 +529,7 @@ export function VisitsPage() {
                 )} />
               </div>
 
-              {/* ── CREDENCIADO ── */}
-              {visitType === 'credenciado' && (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="funcao" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="font-semibold text-slate-700">Função *</FormLabel>
-                        <FormControl>
-                          <TextAutocomplete
-                            value={field.value ?? ''}
-                            onChange={field.onChange}
-                            options={FUNCOES_OBRA}
-                            placeholder="Ex: Pedreiro, Eletricista…"
-                            icon={HardHat}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-
-                    <FormField control={form.control} name="visitor_company" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="font-semibold text-slate-700">Empresa *</FormLabel>
-                        <FormControl>
-                          <TextAutocomplete
-                            value={field.value ?? ''}
-                            onChange={field.onChange}
-                            options={empreiteiras.filter((e) => e.active).map((e) => e.razao_social)}
-                            placeholder="Nome da empresa"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                  </div>
-
-                  <FormField control={form.control} name="atividade" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-semibold text-slate-700">Atividade do dia <span className="font-normal text-slate-400">(opcional)</span></FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Concretagem, Elétrica, Acabamento" className="h-12" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </>
-              )}
-
-              {/* ── VISITANTE ── */}
-              {visitType === 'visitor' && (
+              {(
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField control={form.control} name="visitor_company" render={({ field }) => (
@@ -582,25 +618,7 @@ export function VisitsPage() {
                 </div>
               )}
 
-              {/* Placa extra para credenciado */}
-              {visitType === 'credenciado' && (
-                <FormField control={form.control} name="vehicle_plate" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-semibold text-slate-700">Placa do veículo <span className="font-normal text-slate-400">(opcional)</span></FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="ABC1D23"
-                        className="h-11 font-mono uppercase max-w-[180px]"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              )}
-
-              {/* ── EPI — universal para todos os tipos ── */}
+              {/* ── EPI ── */}
               <FormField control={form.control} name="epi_verificado" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="font-semibold text-slate-700">EPI verificado</FormLabel>
@@ -674,13 +692,14 @@ export function VisitsPage() {
                   disabled={submitting || !!blacklistAlert}
                   style={{ backgroundColor: NAVY, color: 'white' }}
                 >
-                  {submitting ? 'Registrando…' : '✓ Registrar Entrada'}
+                  {submitting ? 'Verificando…' : 'Continuar'}
                 </Button>
               </div>
             </form>
           </Form>
         </CardContent>
       </Card>
+      )}
 
       {/* ── ATIVOS ──────────────────────────────────────────────── */}
       <div>
@@ -930,6 +949,84 @@ export function VisitsPage() {
                 onClick={handleEndVisit}
               >
                 Confirmar saída
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Pop-up: Entrada Autorizada (credenciado) */}
+      {authorizedTarget && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setAuthorizedTarget(null)} />
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-2xl w-[calc(100vw-2rem)] max-w-sm p-6 text-center">
+            <div className="mx-auto mb-3 h-14 w-14 rounded-full flex items-center justify-center" style={{ backgroundColor: 'oklch(0.93 0.08 140)' }}>
+              <CheckCircle2 className="h-8 w-8" style={{ color: 'oklch(0.5 0.15 140)' }} />
+            </div>
+            <h3 className="text-lg font-bold mb-1" style={{ color: 'oklch(0.4 0.14 140)' }}>Entrada Autorizada</h3>
+            <p className="text-sm text-slate-500 mb-4">Pessoa pré-cadastrada e liberada.</p>
+            <div className="rounded-lg bg-slate-50 border px-4 py-3 mb-5 text-left">
+              <p className="font-bold text-slate-800">{authorizedTarget.visitor.full_name}</p>
+              {authorizedTarget.visitor.funcao && <p className="text-sm text-slate-500">{authorizedTarget.visitor.funcao}</p>}
+              {authorizedTarget.visitor.company && <p className="text-sm text-slate-500">{authorizedTarget.visitor.company}</p>}
+            </div>
+            <Button
+              className="w-full h-12 font-bold"
+              style={{ backgroundColor: 'oklch(0.5 0.15 140)' }}
+              disabled={confirmingAuthorized}
+              onClick={confirmAuthorizedEntry}
+            >
+              {confirmingAuthorized ? 'Registrando…' : 'OK, Registrar Entrada'}
+            </Button>
+          </div>
+        </>
+      )}
+
+      {/* Pop-up: Entrada Não Autorizada */}
+      {unauthorizedTarget && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/50" onClick={closeUnauthorized} />
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-2xl w-[calc(100vw-2rem)] max-w-sm p-6">
+            <div className="mx-auto mb-3 h-14 w-14 rounded-full flex items-center justify-center" style={{ backgroundColor: 'oklch(0.93 0.08 25)' }}>
+              <AlertCircle className="h-8 w-8" style={{ color: 'oklch(0.55 0.2 25)' }} />
+            </div>
+            <h3 className="text-lg font-bold text-center mb-1" style={{ color: 'oklch(0.5 0.2 25)' }}>Entrada Não Autorizada</h3>
+            <p className="text-sm text-slate-500 text-center mb-4">Para registrar essa entrada, contate o responsável da obra.</p>
+            <div className="rounded-lg bg-slate-50 border px-4 py-3 mb-4 text-left">
+              <p className="font-bold text-slate-800">{unauthorizedTarget.name}</p>
+              {unauthorizedTarget.company && <p className="text-sm text-slate-500">{unauthorizedTarget.company}</p>}
+            </div>
+            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Nome de quem autoriza *</label>
+            <Input
+              className="h-12 mb-4"
+              placeholder="Ex: Raul Ruiz"
+              value={authorizedByInput}
+              onChange={(e) => setAuthorizedByInput(e.target.value)}
+              autoFocus
+            />
+            {buildWhatsappUrl(authorizedByInput, unauthorizedTarget.name, unauthorizedTarget.company) && (
+              <a
+                href={buildWhatsappUrl(authorizedByInput, unauthorizedTarget.name, unauthorizedTarget.company) ?? '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 h-11 rounded-lg border-2 text-sm font-semibold mb-4 transition-all active:scale-95"
+                style={{ borderColor: 'oklch(0.6 0.15 145)', color: 'oklch(0.4 0.14 145)', backgroundColor: 'oklch(0.97 0.03 145)' }}
+              >
+                <MessageCircle className="h-4 w-4" />
+                Chamar no WhatsApp
+              </a>
+            )}
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={closeUnauthorized}>
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1 font-bold"
+                style={{ backgroundColor: 'oklch(0.5 0.18 25)' }}
+                disabled={!authorizedByInput.trim() || confirmingUnauthorized}
+                onClick={confirmUnauthorizedEntry}
+              >
+                {confirmingUnauthorized ? 'Registrando…' : 'Registrar Entrada'}
               </Button>
             </div>
           </div>

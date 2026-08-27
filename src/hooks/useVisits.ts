@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Visit, Visitor } from '@/types/app.types'
 import type { VisitFormValues } from '@/lib/validators'
-import { unformatCPF } from '@/lib/utils'
+import { unformatCPF, normalizeText } from '@/lib/utils'
 
 const VISIT_SELECT = `
   *,
@@ -38,7 +38,7 @@ export function useVisits() {
     return () => { supabase.removeChannel(channel) }
   }, [fetchActive])
 
-  async function createVisit(values: VisitFormValues, existingVisitorId?: string, visitorType: import('@/types/database.types').VisitorType = 'other'): Promise<{ error: Error | null; visitId?: string }> {
+  async function createVisit(values: VisitFormValues, existingVisitorId?: string, visitorType: import('@/types/database.types').VisitorType = 'other', authorizedBy?: string): Promise<{ error: Error | null; visitId?: string }> {
     let visitorId = existingVisitorId
 
     if (!visitorId) {
@@ -48,8 +48,6 @@ export function useVisits() {
           full_name: values.visitor_name,
           cpf: values.documento || null,
           company: values.visitor_company || null,
-          funcao: values.funcao || null,
-          empreiteira_id: values.empreiteira_id || null,
         })
         .select()
         .single()
@@ -71,8 +69,6 @@ export function useVisits() {
             .update({
               full_name: values.visitor_name,
               company: values.visitor_company || null,
-              funcao: values.funcao || null,
-              empreiteira_id: values.empreiteira_id || null,
             })
             .eq('id', visitorId)
         } else {
@@ -86,8 +82,6 @@ export function useVisits() {
         .from('visitors')
         .update({
           company: values.visitor_company || null,
-          funcao: values.funcao || null,
-          empreiteira_id: values.empreiteira_id || null,
         })
         .eq('id', visitorId)
     }
@@ -100,10 +94,22 @@ export function useVisits() {
       epi_verificado: values.epi_verificado ?? false,
       vehicle_plate: values.vehicle_plate ? values.vehicle_plate.toUpperCase() : null,
       status: 'active',
+      authorized_by: authorizedBy || null,
     }).select('id').single()
 
     if (!error) await fetchActive()
     return { error: error as Error | null, visitId: (visitData as { id: string } | null)?.id }
+  }
+
+  async function checkIn(visitorId: string, visitorType: import('@/types/database.types').VisitorType, authorizedBy?: string): Promise<{ error: Error | null }> {
+    const { error } = await supabase.from('visits').insert({
+      visitor_id: visitorId,
+      visitor_type: visitorType,
+      status: 'active',
+      authorized_by: authorizedBy || null,
+    })
+    if (!error) await fetchActive()
+    return { error: error as Error | null }
   }
 
   async function endVisit(id: string) {
@@ -122,8 +128,7 @@ export function useVisits() {
     plate?: string
     visitor_type?: string
     funcao?: string
-    empreiteira_id?: string
-    empreiteira_nome?: string
+    company?: string
     date_from?: string
     date_to?: string
   }) {
@@ -160,18 +165,20 @@ export function useVisits() {
       const q = filters.funcao.toLowerCase()
       results = results.filter((v) => v.visitor?.funcao?.toLowerCase().includes(q))
     }
-    if (filters.empreiteira_id) {
-      const nome = filters.empreiteira_nome?.trim().toLowerCase()
-      results = results.filter((v) =>
-        v.visitor?.empreiteira_id === filters.empreiteira_id ||
-        (!!nome && v.visitor?.company?.trim().toLowerCase() === nome)
-      )
+    if (filters.company) {
+      const q = normalizeText(filters.company)
+      results = results.filter((v) => {
+        type VisitorWithEmp = Visitor & { empreiteira?: { razao_social: string } }
+        const emp = (v.visitor as VisitorWithEmp)?.empreiteira?.razao_social
+        const company = v.visitor?.company ?? emp ?? ''
+        return normalizeText(company).includes(q)
+      })
     }
 
     return { data: results, error: null }
   }
 
-  return { activeVisits, loading, createVisit, endVisit, fetchForReport, refetch: fetchActive }
+  return { activeVisits, loading, createVisit, checkIn, endVisit, fetchForReport, refetch: fetchActive }
 }
 
 export function useVisitorSearch() {

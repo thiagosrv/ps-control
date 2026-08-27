@@ -1,26 +1,14 @@
 import { z } from 'zod'
 
 export const visitFormSchema = z.object({
-  visit_kind: z.enum(['credenciado', 'visitor']),
   visitor_name: z.string().min(3, 'Nome deve ter ao menos 3 caracteres'),
   documento: z.string().optional(),
-  visitor_company: z.string().optional(),
-  funcao: z.string().optional(),
-  empreiteira_id: z.string().optional(),
+  visitor_company: z.string().min(1, 'Empresa é obrigatória'),
   company_user_id: z.string().optional(),
-  visited_person: z.string().optional(),
-  atividade: z.string().optional(),
+  visited_person: z.string().min(1, 'Informe a pessoa ou setor a visitar'),
+  atividade: z.string().min(1, 'Motivo da visita é obrigatório'),
   vehicle_plate: z.string().optional(),
   epi_verificado: z.boolean(),
-}).superRefine((data, ctx) => {
-  if (data.visit_kind === 'credenciado') {
-    if (!data.funcao?.trim()) ctx.addIssue({ code: 'custom', path: ['funcao'], message: 'Função é obrigatória' })
-    if (!data.visitor_company?.trim()) ctx.addIssue({ code: 'custom', path: ['visitor_company'], message: 'Empresa é obrigatória' })
-  } else {
-    if (!data.visitor_company?.trim()) ctx.addIssue({ code: 'custom', path: ['visitor_company'], message: 'Empresa é obrigatória' })
-    if (!data.atividade?.trim()) ctx.addIssue({ code: 'custom', path: ['atividade'], message: 'Motivo da visita é obrigatório' })
-    if (!data.visited_person?.trim()) ctx.addIssue({ code: 'custom', path: ['visited_person'], message: 'Informe a pessoa ou setor a visitar' })
-  }
 })
 
 export type VisitFormValues = z.infer<typeof visitFormSchema>
@@ -78,7 +66,7 @@ export const reportFilterSchema = z.object({
   cpf: z.string().optional(),
   rg: z.string().optional(),
   funcao: z.string().optional(),
-  empreiteira_id: z.string().optional(),
+  company: z.string().optional(),
   plate: z.string().optional(),
   visitor_type: z.enum(['credenciado', 'visitante', 'all', '']).optional(),
   date_from: z.string().optional(),

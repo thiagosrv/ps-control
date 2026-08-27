@@ -12,6 +12,7 @@ import {
   X,
   HardHat,
   Camera,
+  BadgeCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ const ALL_NAV_ITEMS = [
   { label: 'Dashboard',      to: '/',             icon: LayoutDashboard, end: true,  adminOnly: false },
   { label: 'Registros',      to: '/visits',       icon: ClipboardList,   end: false, adminOnly: false },
   { label: 'Relatórios',     to: '/reports',      icon: FileText,        end: false, adminOnly: false },
+  { label: 'Credenciados',   to: '/credenciados', icon: BadgeCheck,      end: false, adminOnly: true  },
   { label: 'Frentes de Obra',to: '/frentes',      icon: HardHat,         end: false, adminOnly: true  },
   { label: 'Responsáveis',   to: '/responsaveis', icon: Users,           end: false, adminOnly: true  },
   { label: 'Empreiteiras',   to: '/empreiteiras', icon: Building2,       end: false, adminOnly: true  },

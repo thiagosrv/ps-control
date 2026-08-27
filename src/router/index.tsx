@@ -11,6 +11,7 @@ import { VehiclesPage } from '@/pages/VehiclesPage'
 import { ReportsPage } from '@/pages/ReportsPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { EvidenciasPage } from '@/pages/EvidenciasPage'
+import { CredenciadosPage } from '@/pages/CredenciadosPage'
 
 function LoadingSpinner() {
   return (
@@ -55,6 +56,7 @@ export const router = createBrowserRouter([
       { path: 'reports',        element: <ReportsPage /> },
 
       // ── Acesso: somente admin ──
+      { path: 'credenciados',   element: <AdminRoute><CredenciadosPage /></AdminRoute> },
       { path: 'frentes',        element: <AdminRoute><DepartmentsPage /></AdminRoute> },
       { path: 'responsaveis',   element: <AdminRoute><CompanyUsersPage /></AdminRoute> },
       { path: 'empreiteiras',   element: <AdminRoute><EmpreiteirasPage /></AdminRoute> },
