@@ -30,6 +30,13 @@ export function useDashboardStats() {
         supabase.rpc('get_weekly_entries'),
       ])
 
+    for (const [label, res] of [
+      ['activeVisits', activeRes], ['todayEntries', todayRes], ['supplierEntries', supplierRes],
+      ['monthTotal', monthRes], ['recentVisits', recentRes], ['hourlyData', hourlyRes], ['weeklyData', weeklyRes],
+    ] as const) {
+      if (res.error) console.error(`[Dashboard] falha ao buscar "${label}":`, res.error.message, res.error)
+    }
+
     setStats({
       activeVisits: activeRes.count ?? 0,
       todayEntries: todayRes.count ?? 0,
