@@ -46,34 +46,13 @@ export function useVisits() {
         .from('visitors')
         .insert({
           full_name: values.visitor_name,
-          cpf: values.documento || null,
           company: values.visitor_company || null,
         })
         .select()
         .single()
 
       if (visitorError) {
-        // CPF/RG já cadastrado (porteiro digitou em vez de selecionar na busca): reaproveita o registro existente
-        if (visitorError.code === '23505' && values.documento) {
-          const { data: existing } = await supabase
-            .from('visitors')
-            .select('id')
-            .eq('cpf', values.documento)
-            .single()
-
-          if (!existing) return { error: visitorError as Error }
-
-          visitorId = (existing as { id: string }).id
-          await supabase
-            .from('visitors')
-            .update({
-              full_name: values.visitor_name,
-              company: values.visitor_company || null,
-            })
-            .eq('id', visitorId)
-        } else {
-          return { error: visitorError as Error }
-        }
+        return { error: visitorError as Error }
       } else {
         visitorId = (visitor as Visitor).id
       }
@@ -88,10 +67,8 @@ export function useVisits() {
 
     const { error, data: visitData } = await supabase.from('visits').insert({
       visitor_id: visitorId,
-      company_user_id: values.company_user_id || null,
       visitor_type: visitorType,
       atividade: values.atividade || null,
-      epi_verificado: values.epi_verificado ?? false,
       vehicle_plate: values.vehicle_plate ? values.vehicle_plate.toUpperCase() : null,
       status: 'active',
       authorized_by: authorizedBy || null,

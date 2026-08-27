@@ -7,7 +7,7 @@ import { Search, FileDown, FileText } from 'lucide-react'
 import { useVisits } from '@/hooks/useVisits'
 import { useAuth } from '@/hooks/useAuth'
 import { reportFilterSchema, type ReportFilterValues } from '@/lib/validators'
-import { formatCPF, formatVisitorType } from '@/lib/utils'
+import { formatVisitorType } from '@/lib/utils'
 import { generateVisitsPDF } from '@/lib/pdf'
 import { generateVisitsCSV } from '@/lib/csv'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -126,7 +126,7 @@ export function ReportsPage() {
                       <SelectContent>
                         <SelectItem value="all">Todos</SelectItem>
                         <SelectItem value="credenciado">Credenciado</SelectItem>
-                        <SelectItem value="visitante">Visitante</SelectItem>
+                        <SelectItem value="visitante">Não Credenciado</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -173,12 +173,9 @@ export function ReportsPage() {
                   <TableRow className="bg-slate-50">
                     <TableHead>Nome</TableHead>
                     <TableHead>Tipo</TableHead>
-                    <TableHead>Documento</TableHead>
-                    <TableHead>Função</TableHead>
                     <TableHead>Empresa</TableHead>
-                    <TableHead>Responsável</TableHead>
+                    <TableHead>Autorizado por</TableHead>
                     <TableHead>Atividade / Motivo</TableHead>
-                    <TableHead>EPI</TableHead>
                     <TableHead>Placa</TableHead>
                     <TableHead>Entrada</TableHead>
                     <TableHead>Saída</TableHead>
@@ -188,7 +185,7 @@ export function ReportsPage() {
                 <TableBody>
                   {results.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={11} className="text-center py-12 text-slate-400">
+                      <TableCell colSpan={9} className="text-center py-12 text-slate-400">
                         Nenhum resultado para os filtros aplicados
                       </TableCell>
                     </TableRow>
@@ -207,29 +204,20 @@ export function ReportsPage() {
                                     ? 'text-xs text-blue-700 border-blue-300 bg-blue-50'
                                     : 'text-xs text-slate-600 border-slate-300 bg-slate-50'}
                                 >
-                                  {isCredenciado ? 'Credenciado' : 'Visitante'}
+                                  {isCredenciado ? 'Credenciado' : 'Não Credenciado'}
                                 </Badge>
                                 <p className="text-xs text-slate-400 mt-1">{formatVisitorType(v.visitor_type ?? '')}</p>
                               </div>
                             )
                           })()}
                         </TableCell>
-                        <TableCell className="text-sm">{v.visitor?.cpf ? formatCPF(v.visitor.cpf) : (v.visitor?.rg ?? '—')}</TableCell>
-                        <TableCell className="text-sm">{v.visitor?.funcao ?? '—'}</TableCell>
                         <TableCell className="text-sm">
                           {(v.visitor as Visitor & { empreiteira?: { razao_social: string } })?.empreiteira?.razao_social
                             ?? v.visitor?.company
                             ?? '—'}
                         </TableCell>
-                        <TableCell className="text-sm">{v.company_user?.full_name ?? '—'}</TableCell>
+                        <TableCell className="text-sm">{v.authorized_by ?? '—'}</TableCell>
                         <TableCell className="text-sm max-w-[120px] truncate">{v.atividade ?? v.purpose ?? '—'}</TableCell>
-                        <TableCell>
-                          {v.epi_verificado ? (
-                            <Badge variant="outline" className="text-xs text-green-700 border-green-300">✓ OK</Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-xs text-slate-400 border-slate-200">—</Badge>
-                          )}
-                        </TableCell>
                         <TableCell className="text-sm font-mono">{v.vehicle_plate ?? '—'}</TableCell>
                         <TableCell className="text-sm">{format(new Date(v.checked_in_at), 'dd/MM/yyyy HH:mm')}</TableCell>
                         <TableCell className="text-sm">{v.checked_out_at ? format(new Date(v.checked_out_at), 'dd/MM/yyyy HH:mm') : '—'}</TableCell>

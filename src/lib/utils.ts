@@ -34,7 +34,7 @@ export function formatVisitorType(type: string): string {
     unregistered: 'Trabalhador Não Registrado',
     supplier:     'Entrega / Coleta',
     contractor:   'Prestador',
-    other:        'Visitante',
+    other:        'Não Credenciado',
   }
   return map[type] ?? type
 }

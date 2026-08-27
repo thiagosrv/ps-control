@@ -12,7 +12,7 @@ const VISIT_SELECT = `
 export interface ImportSummary {
   updated: number
   created: number
-  ambiguous: string[]
+  duplicatesResolved: string[]
 }
 
 export function useCredenciadosAdmin() {
@@ -61,17 +61,22 @@ export function useCredenciadosAdmin() {
       byNormalizedName.set(key, list)
     }
 
-    const summary: ImportSummary = { updated: 0, created: 0, ambiguous: [] }
+    const summary: ImportSummary = { updated: 0, created: 0, duplicatesResolved: [] }
 
     for (const row of rows) {
       const matches = byNormalizedName.get(normalizeText(row.full_name)) ?? []
-      if (matches.length === 1) {
-        const { error } = await supabase
-          .from('visitors')
-          .update({ company: row.company, funcao: row.funcao, status: row.status })
-          .eq('id', matches[0].id)
-        if (!error) summary.updated++
-      } else if (matches.length === 0) {
+      if (matches.length >= 1) {
+        // Cadastros duplicados do mesmo nome (mesma pessoa que entrou sem CPF em ocasiões diferentes)
+        // recebem todos a mesma atualização, em vez de serem pulados.
+        for (const match of matches) {
+          const { error } = await supabase
+            .from('visitors')
+            .update({ company: row.company, funcao: row.funcao, status: row.status })
+            .eq('id', match.id)
+          if (!error) summary.updated++
+        }
+        if (matches.length > 1) summary.duplicatesResolved.push(row.full_name)
+      } else {
         const { error } = await supabase.from('visitors').insert({
           full_name: row.full_name,
           company: row.company,
@@ -79,8 +84,6 @@ export function useCredenciadosAdmin() {
           status: row.status,
         })
         if (!error) summary.created++
-      } else {
-        summary.ambiguous.push(row.full_name)
       }
     }
 

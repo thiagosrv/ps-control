@@ -174,12 +174,11 @@ export function CredenciadosPage() {
         <div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm">
           <p className="font-semibold text-slate-700">Resumo da importação:</p>
           <p className="text-slate-600">
-            {importSummary.updated} atualizado(s), {importSummary.created} criado(s)
-            {importSummary.ambiguous.length > 0 && `, ${importSummary.ambiguous.length} ambíguo(s)`}
+            {importSummary.updated} cadastro(s) atualizado(s), {importSummary.created} criado(s)
           </p>
-          {importSummary.ambiguous.length > 0 && (
+          {importSummary.duplicatesResolved.length > 0 && (
             <p className="text-amber-600 mt-1">
-              Nomes duplicados na base (ajuste manualmente): {importSummary.ambiguous.join(', ')}
+              Nomes com mais de um cadastro na base (todos foram atualizados): {importSummary.duplicatesResolved.join(', ')}
             </p>
           )}
         </div>

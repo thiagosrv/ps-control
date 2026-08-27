@@ -7,11 +7,10 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
   Search, UserCheck, LogOut, AlertCircle, Printer, ClipboardList,
-  X, ShieldCheck, HardHat, User, Building2, Camera, CheckCircle2, MessageCircle,
+  X, HardHat, User, Building2, Camera, CheckCircle2, MessageCircle,
 } from 'lucide-react'
 import { useVisits, useVisitorSearch } from '@/hooks/useVisits'
 import { useVisitPhotos } from '@/hooks/useVisitPhotos'
-import { useCompanyUsers } from '@/hooks/useCompanyUsers'
 import { useEmpreiteiras } from '@/hooks/useEmpreiteiras'
 import { visitFormSchema, type VisitFormValues } from '@/lib/validators'
 import { normalizeText } from '@/lib/utils'
@@ -21,7 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import type { Visitor, CompanyUser, Visit } from '@/types/app.types'
+import type { Visitor, Visit } from '@/types/app.types'
 
 const GOLD = 'oklch(0.838 0.176 86.4)'
 const NAVY = 'oklch(0.188 0.075 262)'
@@ -29,19 +28,15 @@ const NAVY = 'oklch(0.188 0.075 262)'
 type VisitTypeUI = 'credenciado' | 'visitor'
 
 const VISIT_TYPES: { id: VisitTypeUI; label: string; sublabel: string; icon: React.ElementType }[] = [
-  { id: 'credenciado', label: 'Credenciado', sublabel: 'Trabalhador da obra — buscar ou cadastrar novo', icon: HardHat },
-  { id: 'visitor',     label: 'Visitante',    sublabel: 'Reunião, vistoria, fiscal, entrega ou coleta',  icon: User    },
+  { id: 'credenciado', label: 'Credenciado',      sublabel: 'Trabalhador da obra — buscar ou cadastrar novo', icon: HardHat },
+  { id: 'visitor',     label: 'Não Credenciado',  sublabel: 'Reunião, vistoria, fiscal, entrega ou coleta',  icon: User    },
 ]
 
 const EMPTY_FORM: VisitFormValues = {
   visitor_name: '',
-  documento: '',
   visitor_company: '',
-  company_user_id: '',
-  visited_person: '',
   atividade: '',
   vehicle_plate: '',
-  epi_verificado: false,
 }
 
 const WHATSAPP_NUMBER = (import.meta.env.VITE_WHATSAPP_NUMBER as string | undefined)?.replace(/\D/g, '')
@@ -110,7 +105,6 @@ type AuthorizedTarget = { visitor: Visitor }
 export function VisitsPage() {
   const { activeVisits, loading: visitsLoading, createVisit, checkIn, endVisit } = useVisits()
   const { uploadPhoto } = useVisitPhotos()
-  const { companyUsers, findOrCreate: findOrCreateCompanyUser } = useCompanyUsers()
   const { searchVisitors } = useVisitorSearch()
   const { empreiteiras } = useEmpreiteiras()
 
@@ -120,8 +114,6 @@ export function VisitsPage() {
   const [showQuickDropdown, setShowQuickDropdown] = useState(false)
   const [selectedVisitor, setSelectedVisitor] = useState<Visitor | null>(null)
   const [blacklistAlert, setBlacklistAlert] = useState('')
-  const [userQuery, setUserQuery] = useState('')
-  const [showUserDropdown, setShowUserDropdown] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [authorizedTarget, setAuthorizedTarget] = useState<AuthorizedTarget | null>(null)
   const [confirmingAuthorized, setConfirmingAuthorized] = useState(false)
@@ -168,7 +160,6 @@ export function VisitsPage() {
     }
     setSelectedVisitor(visitor)
     form.setValue('visitor_name', visitor.full_name)
-    form.setValue('documento', visitor.cpf ?? visitor.rg ?? '')
     form.setValue('visitor_company', visitor.company ?? '')
   }
 
@@ -223,22 +214,6 @@ export function VisitsPage() {
     setSelectedVisitor(null)
     setBlacklistAlert('')
     form.reset(EMPTY_FORM)
-    setUserQuery('')
-  }
-
-  // ── Busca de responsável (lista já carregada — filtro instantâneo) ──
-  function handleUserSearch(value: string) {
-    setUserQuery(value)
-    form.setValue('company_user_id', '')
-    form.setValue('visited_person', value)
-    setShowUserDropdown(true)
-  }
-
-  function selectUser(user: CompanyUser) {
-    setUserQuery(user.full_name)
-    setShowUserDropdown(false)
-    form.setValue('company_user_id', user.id)
-    form.setValue('visited_person', user.full_name)
   }
 
   // ── Troca de tipo ─────────────────────────────────────────────
@@ -250,7 +225,6 @@ export function VisitsPage() {
     setQuickResults([])
     setShowQuickDropdown(false)
     setBlacklistAlert('')
-    setUserQuery('')
     setAuthorizedTarget(null)
     closeUnauthorized()
   }
@@ -287,7 +261,6 @@ export function VisitsPage() {
     form.reset(EMPTY_FORM)
     setSelectedVisitor(null)
     setQuickQuery('')
-    setUserQuery('')
     setEntryPhoto(null)
     setEntryPhotoPreview(null)
     if (entryCameraRef.current) entryCameraRef.current.value = ''
@@ -298,16 +271,6 @@ export function VisitsPage() {
   async function onSubmit(values: VisitFormValues) {
     if (blacklistAlert) return
     setSubmitting(true)
-
-    if (!values.company_user_id && values.visited_person?.trim()) {
-      const { id, error: personError } = await findOrCreateCompanyUser(values.visited_person)
-      if (personError) {
-        toast.error('Erro ao registrar pessoa/setor visitado')
-        setSubmitting(false)
-        return
-      }
-      values.company_user_id = id ?? ''
-    }
 
     const existingVisitorId = selectedVisitor?.id
     setUnauthorizedTarget({
@@ -492,14 +455,14 @@ export function VisitsPage() {
             Busque o nome ou documento acima para registrar a entrada.
             {quickQuery.trim().length >= 2 && quickResults.length === 0 && (
               <p className="mt-1.5 text-slate-500">
-                Não encontrado. Novos visitantes devem ser registrados na aba <strong>Visitante</strong>.
+                Não encontrado. Novos não credenciados devem ser registrados na aba <strong>Não Credenciado</strong>.
               </p>
             )}
           </div>
         )}
       </div>
 
-      {/* ── FORMULÁRIO (apenas Visitante) ───────────────────────── */}
+      {/* ── FORMULÁRIO (apenas Não Credenciado) ─────────────────── */}
       {visitType === 'visitor' && (
       <Card className="shadow-sm">
         <CardContent className="pt-5">
@@ -518,127 +481,50 @@ export function VisitsPage() {
                   </FormItem>
                 )} />
 
-                <FormField control={form.control} name="documento" render={({ field }) => (
+                <FormField control={form.control} name="visitor_company" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-semibold text-slate-700">Documento (CPF / RG)</FormLabel>
+                    <FormLabel className="font-semibold text-slate-700">Empresa *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Opcional" className="h-12" {...field} />
+                      <TextAutocomplete
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                        options={empreiteiras.filter((e) => e.active).map((e) => e.razao_social)}
+                        placeholder="Empresa do não credenciado"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
               </div>
 
-              {(
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="visitor_company" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="font-semibold text-slate-700">Empresa *</FormLabel>
-                        <FormControl>
-                          <TextAutocomplete
-                            value={field.value ?? ''}
-                            onChange={field.onChange}
-                            options={empreiteiras.filter((e) => e.active).map((e) => e.razao_social)}
-                            placeholder="Empresa do visitante"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField control={form.control} name="atividade" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-semibold text-slate-700">Motivo da visita *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: Reunião, Vistoria, Entrega…" className="h-12" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
 
-                    <FormField control={form.control} name="visited_person" render={() => {
-                      const userMatches = (userQuery.trim().length > 0
-                        ? companyUsers.filter((u) => normalizeText(u.full_name).includes(normalizeText(userQuery)))
-                        : companyUsers
-                      ).slice(0, 8)
-                      return (
-                        <FormItem>
-                          <FormLabel className="font-semibold text-slate-700">Pessoa ou setor a visitar *</FormLabel>
-                          <div className="relative">
-                            <div className="relative">
-                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                              <Input
-                                placeholder="Buscar ou digitar nome/setor novo…"
-                                className="h-12 pl-9"
-                                value={userQuery}
-                                onChange={(e) => handleUserSearch(e.target.value)}
-                                onFocus={() => setShowUserDropdown(true)}
-                                onBlur={() => setTimeout(() => setShowUserDropdown(false), 150)}
-                              />
-                            </div>
-                            {showUserDropdown && userMatches.length > 0 && (
-                              <div className="absolute top-full left-0 right-0 z-50 bg-white border rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
-                                {userMatches.map((u) => (
-                                  <button key={u.id} type="button"
-                                    className="w-full flex flex-col px-4 py-2.5 text-left hover:bg-yellow-50 border-b last:border-0"
-                                    onMouseDown={(ev) => ev.preventDefault()}
-                                    onClick={() => selectUser(u)}>
-                                    <p className="text-sm font-semibold text-slate-800">{u.full_name}</p>
-                                    <p className="text-xs text-slate-500">{u.department?.name ?? '—'}</p>
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )
-                    }} />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="atividade" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="font-semibold text-slate-700">Motivo da visita *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Ex: Reunião, Vistoria, Entrega…" className="h-12" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-
-                    <FormField control={form.control} name="vehicle_plate" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="font-semibold text-slate-700">
-                          Placa do veículo <span className="font-normal text-slate-400">(opcional)</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="ABC1D23"
-                            className="h-12 font-mono uppercase"
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                  </div>
-                </div>
-              )}
-
-              {/* ── EPI ── */}
-              <FormField control={form.control} name="epi_verificado" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-semibold text-slate-700">EPI verificado</FormLabel>
-                  <FormControl>
-                    <button
-                      type="button"
-                      onClick={() => field.onChange(!field.value)}
-                      className="flex items-center gap-3 h-12 w-full px-4 rounded-lg border-2 transition-all text-sm font-semibold"
-                      style={{
-                        borderColor: field.value ? 'oklch(0.5 0.15 140)' : 'oklch(0.908 0.008 264)',
-                        backgroundColor: field.value ? 'oklch(0.97 0.05 140)' : 'white',
-                        color: field.value ? 'oklch(0.3 0.12 140)' : 'oklch(0.52 0.018 264)',
-                      }}
-                    >
-                      <ShieldCheck className="h-5 w-5 shrink-0" />
-                      {field.value ? '✓ EPI conferido' : 'Toque para confirmar EPI'}
-                    </button>
-                  </FormControl>
-                </FormItem>
-              )} />
+                <FormField control={form.control} name="vehicle_plate" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-semibold text-slate-700">
+                      Placa do veículo <span className="font-normal text-slate-400">(opcional)</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="ABC1D23"
+                        className="h-12 font-mono uppercase"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
 
               {/* Foto de evidência de entrada */}
               <div className="border-t pt-4">
@@ -985,20 +871,41 @@ export function VisitsPage() {
       {/* Pop-up: Entrada Não Autorizada */}
       {unauthorizedTarget && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/50" onClick={closeUnauthorized} />
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-2xl w-[calc(100vw-2rem)] max-w-sm p-6">
-            <div className="mx-auto mb-3 h-14 w-14 rounded-full flex items-center justify-center" style={{ backgroundColor: 'oklch(0.93 0.08 25)' }}>
-              <AlertCircle className="h-8 w-8" style={{ color: 'oklch(0.55 0.2 25)' }} />
+          <div className="fixed inset-0 z-40 bg-black/60" onClick={closeUnauthorized} />
+          <div
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 rounded-3xl shadow-2xl w-[calc(100vw-2rem)] max-w-sm p-6"
+            style={{
+              background: 'linear-gradient(160deg, oklch(0.5 0.2 25) 0%, oklch(0.32 0.16 25) 100%)',
+              border: '2px solid oklch(0.62 0.2 25)',
+            }}
+          >
+            <div
+              className="mx-auto mb-3 h-14 w-14 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: 'oklch(1 0 0 / 0.12)', border: `2px solid ${GOLD}` }}
+            >
+              <AlertCircle className="h-8 w-8" style={{ color: GOLD }} />
             </div>
-            <h3 className="text-lg font-bold text-center mb-1" style={{ color: 'oklch(0.5 0.2 25)' }}>Entrada Não Autorizada</h3>
-            <p className="text-sm text-slate-500 text-center mb-4">Para registrar essa entrada, contate o responsável da obra.</p>
-            <div className="rounded-lg bg-slate-50 border px-4 py-3 mb-4 text-left">
-              <p className="font-bold text-slate-800">{unauthorizedTarget.name}</p>
-              {unauthorizedTarget.company && <p className="text-sm text-slate-500">{unauthorizedTarget.company}</p>}
+            <h3 className="text-lg font-extrabold text-center mb-1" style={{ color: GOLD }}>
+              Entrada Não Autorizada
+            </h3>
+            <p className="text-sm text-center mb-4" style={{ color: 'oklch(0.97 0.01 25 / 0.85)' }}>
+              Para registrar essa entrada, contate o responsável da obra.
+            </p>
+            <div
+              className="rounded-lg px-4 py-3 mb-4 text-left"
+              style={{ backgroundColor: 'oklch(0 0 0 / 0.22)', border: '1px solid oklch(1 0 0 / 0.15)' }}
+            >
+              <p className="font-bold text-white">{unauthorizedTarget.name}</p>
+              {unauthorizedTarget.company && (
+                <p className="text-sm" style={{ color: 'oklch(1 0 0 / 0.7)' }}>{unauthorizedTarget.company}</p>
+              )}
             </div>
-            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Nome de quem autoriza *</label>
+            <label className="text-sm font-bold mb-1.5 block" style={{ color: GOLD }}>
+              Nome de quem autoriza *
+            </label>
             <Input
-              className="h-12 mb-4"
+              className="h-12 mb-4 bg-white text-slate-900 border-0 focus-visible:ring-2"
+              style={{ ['--tw-ring-color' as string]: GOLD }}
               placeholder="Ex: Raul Ruiz"
               value={authorizedByInput}
               onChange={(e) => setAuthorizedByInput(e.target.value)}
@@ -1009,24 +916,29 @@ export function VisitsPage() {
                 href={buildWhatsappUrl(authorizedByInput, unauthorizedTarget.name, unauthorizedTarget.company) ?? '#'}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 h-11 rounded-lg border-2 text-sm font-semibold mb-4 transition-all active:scale-95"
-                style={{ borderColor: 'oklch(0.6 0.15 145)', color: 'oklch(0.4 0.14 145)', backgroundColor: 'oklch(0.97 0.03 145)' }}
+                className="flex items-center justify-center gap-2 h-11 rounded-lg border-2 text-sm font-semibold mb-4 transition-all active:scale-95 bg-white"
+                style={{ borderColor: 'oklch(0.6 0.15 145)', color: 'oklch(0.4 0.14 145)' }}
               >
                 <MessageCircle className="h-4 w-4" />
                 Chamar no WhatsApp
               </a>
             )}
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={closeUnauthorized}>
+              <Button
+                variant="outline"
+                className="flex-1 font-semibold bg-transparent hover:bg-white/10 hover:text-white"
+                style={{ borderColor: 'oklch(1 0 0 / 0.4)', color: 'white' }}
+                onClick={closeUnauthorized}
+              >
                 Cancelar
               </Button>
               <Button
-                className="flex-1 font-bold"
-                style={{ backgroundColor: 'oklch(0.5 0.18 25)' }}
+                className="flex-1 font-bold text-white hover:brightness-110"
+                style={{ backgroundColor: 'oklch(0.58 0.17 145)' }}
                 disabled={!authorizedByInput.trim() || confirmingUnauthorized}
                 onClick={confirmUnauthorizedEntry}
               >
-                {confirmingUnauthorized ? 'Registrando…' : 'Registrar Entrada'}
+                {confirmingUnauthorized ? 'Autorizando…' : 'Autorizar Entrada'}
               </Button>
             </div>
           </div>
@@ -1038,7 +950,7 @@ export function VisitsPage() {
         <div id="badge-print-root" style={{ display: 'none' }} className="p-8 font-sans">
           <div style={{ border: '3px solid #162050', borderRadius: 12, padding: 32, maxWidth: 320, margin: '0 auto' }}>
             <p style={{ textAlign: 'center', fontWeight: 800, fontSize: 18, color: '#162050', marginBottom: 2, letterSpacing: 3 }}>
-              {printVisit.visitor?.funcao ? 'TRABALHADOR' : 'VISITANTE'}
+              {printVisit.visitor?.funcao ? 'TRABALHADOR' : 'NÃO CREDENCIADO'}
             </p>
             <div style={{ height: 3, background: '#F5C200', borderRadius: 2, marginBottom: 16 }} />
             <p style={{ textAlign: 'center', fontSize: 20, fontWeight: 700, color: '#162050', marginBottom: 16 }}>

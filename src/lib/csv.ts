@@ -1,6 +1,6 @@
 import Papa from 'papaparse'
 import { format } from 'date-fns'
-import { formatCPF, formatVisitorType } from './utils'
+import { formatVisitorType } from './utils'
 import type { Visit } from '@/types/app.types'
 
 export function generateVisitsCSV(visits: Visit[]) {
@@ -9,14 +9,9 @@ export function generateVisitsCSV(visits: Visit[]) {
     return {
       Nome: v.visitor?.full_name ?? '',
       Tipo: formatVisitorType(v.visitor_type ?? ''),
-      CPF: v.visitor?.cpf ? formatCPF(v.visitor.cpf) : '',
-      RG: v.visitor?.rg ?? '',
-      Função: v.visitor?.funcao ?? '',
       Empresa: empresa,
-      Responsável: v.company_user?.full_name ?? '',
-      'Frente de Obra': v.company_user?.department?.name ?? '',
+      'Autorizado por': v.authorized_by ?? '',
       'Atividade / Motivo': v.atividade ?? v.purpose ?? '',
-      EPI_Verificado: v.epi_verificado ? 'Sim' : 'Não',
       Entrada: format(new Date(v.checked_in_at), 'dd/MM/yyyy HH:mm'),
       Saída: v.checked_out_at ? format(new Date(v.checked_out_at), 'dd/MM/yyyy HH:mm') : '',
       Placa: v.vehicle_plate ?? '',
