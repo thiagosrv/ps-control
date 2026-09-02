@@ -18,6 +18,8 @@ export interface ImportSummary {
 export function useCredenciadosAdmin() {
   const [entries, setEntries] = useState<Visit[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchResults, setSearchResults] = useState<Visitor[]>([])
+  const [searching, setSearching] = useState(false)
 
   const fetchEntries = useCallback(async (dateFrom?: string, dateTo?: string) => {
     setLoading(true)
@@ -34,8 +36,30 @@ export function useCredenciadosAdmin() {
     setLoading(false)
   }, [])
 
-  async function updateVisitorInfo(visitorId: string, values: { full_name?: string; company?: string }) {
+  const searchVisitors = useCallback(async (query: string) => {
+    const term = query.trim()
+    if (!term) {
+      setSearchResults([])
+      return
+    }
+    setSearching(true)
+    const { data } = await supabase
+      .from('visitors')
+      .select('*, empreiteira:empreiteiras(*)')
+      .ilike('full_name', `%${term}%`)
+      .order('full_name')
+      .limit(50)
+    setSearchResults((data as unknown as Visitor[]) ?? [])
+    setSearching(false)
+  }, [])
+
+  async function updateVisitorInfo(visitorId: string, values: { full_name?: string; company?: string; funcao?: string }) {
     const { error } = await supabase.from('visitors').update(values).eq('id', visitorId)
+    return error
+  }
+
+  async function createVisitor(values: { full_name: string; company: string; funcao: string; status: 'autorizado' | 'nao_autorizado' }) {
+    const { error } = await supabase.from('visitors').insert(values)
     return error
   }
 
@@ -94,9 +118,13 @@ export function useCredenciadosAdmin() {
     entries,
     loading,
     fetchEntries,
+    searchResults,
+    searching,
+    searchVisitors,
     updateVisitorInfo,
     updateVisitEntry,
     setStatus,
+    createVisitor,
     bulkUpsertFromImport,
   }
 }
