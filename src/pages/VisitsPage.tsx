@@ -500,7 +500,7 @@ export function VisitsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField control={form.control} name="atividade" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-semibold text-slate-700">Motivo da visita *</FormLabel>
+                    <FormLabel className="font-semibold text-slate-700">Motivo da Visita (OPCIONAL)</FormLabel>
                     <FormControl>
                       <Input placeholder="Ex: Reunião, Vistoria, Entrega…" className="h-12" {...field} />
                     </FormControl>

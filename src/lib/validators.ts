@@ -3,7 +3,7 @@ import { z } from 'zod'
 export const visitFormSchema = z.object({
   visitor_name: z.string().min(3, 'Nome deve ter ao menos 3 caracteres'),
   visitor_company: z.string().min(1, 'Empresa é obrigatória'),
-  atividade: z.string().min(1, 'Motivo da visita é obrigatório'),
+  atividade: z.string().optional(),
   vehicle_plate: z.string().optional(),
 })
 
