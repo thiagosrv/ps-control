@@ -109,22 +109,37 @@ export function useVisits() {
     date_from?: string
     date_to?: string
   }) {
-    let query = supabase
-      .from('visits')
-      .select(VISIT_SELECT)
-      .order('checked_in_at', { ascending: false })
+    function buildQuery() {
+      let q = supabase
+        .from('visits')
+        .select(VISIT_SELECT)
+        .order('checked_in_at', { ascending: false })
 
-    if (filters.plate) query = query.ilike('vehicle_plate', `%${filters.plate}%`)
-    if (filters.visitor_type === 'credenciado') query = query.in('visitor_type', ['employee', 'unregistered'])
-    else if (filters.visitor_type === 'visitante') query = query.in('visitor_type', ['other', 'supplier', 'contractor'])
-    if (filters.date_from) query = query.gte('checked_in_at', filters.date_from)
-    if (filters.date_to) query = query.lte('checked_in_at', filters.date_to + 'T23:59:59')
+      if (filters.plate) q = q.ilike('vehicle_plate', `%${filters.plate}%`)
+      if (filters.visitor_type === 'credenciado') q = q.in('visitor_type', ['employee', 'unregistered'])
+      else if (filters.visitor_type === 'visitante') q = q.in('visitor_type', ['other', 'supplier', 'contractor'])
+      if (filters.date_from) q = q.gte('checked_in_at', filters.date_from)
+      if (filters.date_to) q = q.lte('checked_in_at', filters.date_to + 'T23:59:59')
+      return q
+    }
 
-    const { data, error } = await query.limit(500)
+    // Busca em páginas de 1000 (limite do Supabase por requisição) até trazer
+    // tudo que bate com os filtros de data/tipo/placa — antes cortava em 500
+    // registros e os filtros de nome/CPF/RG/função/empresa abaixo (que são
+    // aplicados no cliente) podiam nunca ver resultados que ficaram de fora do corte.
+    const PAGE_SIZE = 1000
+    let allData: Visit[] = []
+    let offset = 0
+    while (true) {
+      const { data, error } = await buildQuery().range(offset, offset + PAGE_SIZE - 1)
+      if (error) return { data: [], error }
+      const page = (data as unknown as Visit[]) ?? []
+      allData = allData.concat(page)
+      if (page.length < PAGE_SIZE) break
+      offset += PAGE_SIZE
+    }
 
-    if (error) return { data: [], error }
-
-    let results = (data as Visit[]) ?? []
+    let results = allData
 
     if (filters.name) {
       const q = filters.name.toLowerCase()
