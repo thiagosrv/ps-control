@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
-import { Download, Upload, FileDown, ShieldCheck, ShieldOff, Pencil, UserPlus, Search, X } from 'lucide-react'
+import { Download, Upload, FileDown, ShieldCheck, ShieldOff, Pencil, UserPlus, Search, X, RotateCcw } from 'lucide-react'
 import { useCredenciadosAdmin, type ImportSummary } from '@/hooks/useCredenciadosAdmin'
 import { parseCredenciadosXLSX, downloadCredenciadosTemplate } from '@/lib/xlsx'
 import { generateCredenciadosCSV } from '@/lib/csv'
@@ -25,6 +25,7 @@ export function CredenciadosPage() {
     updateVisitorInfo,
     updateVisitEntry,
     setStatus,
+    reopenVisit,
     createVisitor,
     bulkUpsertFromImport,
   } = useCredenciadosAdmin()
@@ -89,6 +90,15 @@ export function CredenciadosPage() {
       await fetchEntries(dateFrom || undefined, dateTo || undefined)
     }
     setSaving(false)
+  }
+
+  async function handleReopenVisit(visit: Visit) {
+    const error = await reopenVisit(visit.id)
+    if (error) toast.error('Erro ao reabrir registro')
+    else {
+      toast.success('Entrada reaberta — a pessoa voltou a constar como "Em andamento"')
+      await fetchEntries(dateFrom || undefined, dateTo || undefined)
+    }
   }
 
   async function handleToggleStatus(visit: Visit) {
@@ -254,8 +264,20 @@ export function CredenciadosPage() {
     { key: 'atividade', label: 'Motivo da Visita', render: (row) => (row as unknown as Visit).atividade ?? '—' },
     { key: 'authorized_by', label: 'Autorizado por', render: (row) => (row as unknown as Visit).authorized_by ?? '—' },
     {
+      key: 'situacao',
+      label: 'Situação',
+      render: (row) => {
+        const v = row as unknown as Visit
+        return v.status === 'active' ? (
+          <Badge>Em andamento</Badge>
+        ) : (
+          <Badge variant="secondary">Encerrada</Badge>
+        )
+      },
+    },
+    {
       key: 'status',
-      label: 'Status',
+      label: 'Credenciamento',
       render: (row) => {
         const v = row as unknown as Visit
         return v.visitor?.status === 'autorizado' ? (
@@ -268,12 +290,23 @@ export function CredenciadosPage() {
     {
       key: 'actions',
       label: '',
-      className: 'w-40 text-right',
+      className: 'w-48 text-right',
       render: (row) => {
         const v = row as unknown as Visit
         const isAutorizado = v.visitor?.status === 'autorizado'
         return (
           <div className="flex justify-end gap-1">
+            {v.status === 'completed' && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-blue-600 hover:text-blue-800"
+                title='Reabrir — desfaz a saída, a pessoa volta a constar "Em andamento"'
+                onClick={(e) => { e.stopPropagation(); handleReopenVisit(v) }}
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+              </Button>
+            )}
             <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); openEdit(v) }}>
               <Pencil className="h-3.5 w-3.5" />
             </Button>

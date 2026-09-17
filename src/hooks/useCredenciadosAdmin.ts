@@ -73,6 +73,11 @@ export function useCredenciadosAdmin() {
     return error
   }
 
+  async function reopenVisit(visitId: string) {
+    const { error } = await supabase.from('visits').update({ status: 'active', checked_out_at: null }).eq('id', visitId)
+    return error
+  }
+
   async function bulkUpsertFromImport(rows: CredenciadoImportRow[]): Promise<ImportSummary> {
     const { data: existing } = await supabase.from('visitors').select('id, full_name')
     const existingList = (existing as { id: string; full_name: string }[]) ?? []
@@ -124,6 +129,7 @@ export function useCredenciadosAdmin() {
     updateVisitorInfo,
     updateVisitEntry,
     setStatus,
+    reopenVisit,
     createVisitor,
     bulkUpsertFromImport,
   }
