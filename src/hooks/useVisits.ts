@@ -38,7 +38,7 @@ export function useVisits() {
     return () => { supabase.removeChannel(channel) }
   }, [fetchActive])
 
-  async function createVisit(values: VisitFormValues, existingVisitorId?: string, visitorType: import('@/types/database.types').VisitorType = 'other', authorizedBy?: string): Promise<{ error: Error | null; visitId?: string }> {
+  async function createVisit(values: Omit<VisitFormValues, 'first_name' | 'last_name'> & { visitor_name: string },existingVisitorId?: string, visitorType: import('@/types/database.types').VisitorType = 'other', authorizedBy?: string): Promise<{ error: Error | null; visitId?: string }> {
     let visitorId = existingVisitorId
 
     if (!visitorId) {

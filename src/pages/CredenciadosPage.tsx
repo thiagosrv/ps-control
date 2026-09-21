@@ -5,6 +5,7 @@ import { Download, Upload, FileDown, ShieldCheck, ShieldOff, Pencil, UserPlus, S
 import { useCredenciadosAdmin, type ImportSummary } from '@/hooks/useCredenciadosAdmin'
 import { parseCredenciadosXLSX, downloadCredenciadosTemplate } from '@/lib/xlsx'
 import { generateCredenciadosCSV } from '@/lib/csv'
+import { toTitleCase } from '@/lib/utils'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { DataTable, type Column } from '@/components/shared/DataTable'
 import { Button } from '@/components/ui/button'
@@ -39,8 +40,9 @@ export function CredenciadosPage() {
   const [editVisitorForm, setEditVisitorForm] = useState({ full_name: '', company: '', funcao: '' })
   const [savingVisitor, setSavingVisitor] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
-  const [createForm, setCreateForm] = useState<{ full_name: string; company: string; funcao: string; status: 'autorizado' | 'nao_autorizado' }>({
-    full_name: '',
+  const [createForm, setCreateForm] = useState<{ first_name: string; last_name: string; company: string; funcao: string; status: 'autorizado' | 'nao_autorizado' }>({
+    first_name: '',
+    last_name: '',
     company: '',
     funcao: '',
     status: 'autorizado',
@@ -149,14 +151,20 @@ export function CredenciadosPage() {
     }
   }
 
+  const isCreateFormValid =
+    createForm.first_name.trim().length >= 2 &&
+    createForm.last_name.trim().length >= 2 &&
+    createForm.company.trim().length > 0
+
   async function handleCreateVisitor() {
-    if (!createForm.full_name.trim()) {
-      toast.error('Informe o nome')
+    if (!isCreateFormValid) {
+      toast.error('Informe nome, sobrenome e empresa')
       return
     }
+    const fullName = `${toTitleCase(createForm.first_name.trim())} ${toTitleCase(createForm.last_name.trim(), true)}`
     setCreating(true)
     const error = await createVisitor({
-      full_name: createForm.full_name.trim(),
+      full_name: fullName,
       company: createForm.company.trim(),
       funcao: createForm.funcao.trim(),
       status: createForm.status,
@@ -166,10 +174,9 @@ export function CredenciadosPage() {
     } else {
       toast.success('Usuário cadastrado')
       setCreateOpen(false)
-      const name = createForm.full_name.trim()
-      setCreateForm({ full_name: '', company: '', funcao: '', status: 'autorizado' })
-      setSearch(name)
-      await searchVisitors(name)
+      setCreateForm({ first_name: '', last_name: '', company: '', funcao: '', status: 'autorizado' })
+      setSearch(fullName)
+      await searchVisitors(fullName)
     }
     setCreating(false)
   }
@@ -479,14 +486,29 @@ export function CredenciadosPage() {
             <div>
               <label className="text-sm font-medium text-slate-700 block mb-1">Nome *</label>
               <Input
-                value={createForm.full_name}
-                onChange={(e) => setCreateForm((f) => ({ ...f, full_name: e.target.value }))}
+                value={createForm.first_name}
+                placeholder="Ex.: João"
+                autoComplete="off"
+                onChange={(e) => setCreateForm((f) => ({ ...f, first_name: toTitleCase(e.target.value) }))}
                 autoFocus
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 block mb-1">Empresa</label>
-              <Input value={createForm.company} onChange={(e) => setCreateForm((f) => ({ ...f, company: e.target.value }))} />
+              <label className="text-sm font-medium text-slate-700 block mb-1">Sobrenome *</label>
+              <Input
+                value={createForm.last_name}
+                placeholder="Ex.: da Silva"
+                autoComplete="off"
+                onChange={(e) => setCreateForm((f) => ({ ...f, last_name: toTitleCase(e.target.value, true) }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700 block mb-1">Empresa *</label>
+              <Input
+                value={createForm.company}
+                placeholder="Nome da empresa"
+                onChange={(e) => setCreateForm((f) => ({ ...f, company: e.target.value }))}
+              />
             </div>
             <div>
               <label className="text-sm font-medium text-slate-700 block mb-1">Função</label>
@@ -508,7 +530,7 @@ export function CredenciadosPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={creating}>Cancelar</Button>
-            <Button onClick={handleCreateVisitor} disabled={creating || !createForm.full_name.trim()}>
+            <Button onClick={handleCreateVisitor} disabled={creating || !isCreateFormValid}>
               {creating ? 'Cadastrando...' : 'Cadastrar'}
             </Button>
           </DialogFooter>

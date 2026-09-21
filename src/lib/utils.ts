@@ -53,6 +53,28 @@ export function normalizeText(value: string): string {
     .trim()
 }
 
+const NAME_CONNECTORS = new Set(['da', 'de', 'di', 'do', 'du', 'das', 'dos', 'e'])
+
+export function toTitleCase(value: string, allowLeadingConnector = false): string {
+  let isFirstWord = true
+  return value
+    .toLowerCase()
+    .split(/(\s+)/)
+    .map((part) => {
+      if (!part.trim()) return part
+      const first = isFirstWord
+      isFirstWord = false
+      if (NAME_CONNECTORS.has(part) && (!first || allowLeadingConnector)) return part
+      return part.replace(/(^|[-'’])(\p{L})/gu, (_, sep: string, ch: string) => sep + ch.toUpperCase())
+    })
+    .join('')
+}
+
+export function splitFullName(fullName: string): { first: string; last: string } {
+  const [first = '', ...rest] = fullName.trim().split(/\s+/)
+  return { first, last: rest.join(' ') }
+}
+
 export const FUNCOES_OBRA = [
   'Pedreiro',
   'Armador',

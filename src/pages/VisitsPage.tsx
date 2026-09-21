@@ -13,7 +13,7 @@ import { useVisits, useVisitorSearch } from '@/hooks/useVisits'
 import { useVisitPhotos } from '@/hooks/useVisitPhotos'
 import { useEmpreiteiras } from '@/hooks/useEmpreiteiras'
 import { visitFormSchema, type VisitFormValues } from '@/lib/validators'
-import { normalizeText } from '@/lib/utils'
+import { normalizeText, toTitleCase, splitFullName } from '@/lib/utils'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,7 +33,8 @@ const VISIT_TYPES: { id: VisitTypeUI; label: string; sublabel: string; icon: Rea
 ]
 
 const EMPTY_FORM: VisitFormValues = {
-  visitor_name: '',
+  first_name: '',
+  last_name: '',
   visitor_company: '',
   atividade: '',
   vehicle_plate: '',
@@ -159,7 +160,9 @@ export function VisitsPage() {
       return
     }
     setSelectedVisitor(visitor)
-    form.setValue('visitor_name', visitor.full_name)
+    const { first, last } = splitFullName(visitor.full_name)
+    form.setValue('first_name', first)
+    form.setValue('last_name', last)
     form.setValue('visitor_company', visitor.company ?? '')
   }
 
@@ -273,11 +276,12 @@ export function VisitsPage() {
     setSubmitting(true)
 
     const existingVisitorId = selectedVisitor?.id
+    const visitorName = `${toTitleCase(values.first_name)} ${toTitleCase(values.last_name, true)}`
     setUnauthorizedTarget({
-      name: values.visitor_name,
+      name: visitorName,
       company: values.visitor_company,
       confirm: async (authorizedBy) => {
-        const { error, visitId } = await createVisit(values, existingVisitorId, 'other', authorizedBy)
+        const { error, visitId } = await createVisit({ ...values, visitor_name: visitorName }, existingVisitorId, 'other', authorizedBy)
         if (error) { toast.error('Erro ao registrar: ' + translateError(error)); return false }
         if (entryPhoto && visitId) {
           const { error: photoErr } = await uploadPhoto(visitId, entryPhoto, 'entrada')
@@ -471,11 +475,33 @@ export function VisitsPage() {
 
               {/* Campos comuns */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField control={form.control} name="visitor_name" render={({ field }) => (
+                <FormField control={form.control} name="first_name" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="font-semibold text-slate-700">Nome *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nome completo" className="h-12" {...field} />
+                      <Input
+                        placeholder="Ex.: João"
+                        className="h-12"
+                        autoComplete="off"
+                        {...field}
+                        onChange={(e) => field.onChange(toTitleCase(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={form.control} name="last_name" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-semibold text-slate-700">Sobrenome *</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Ex.: da Silva"
+                        className="h-12"
+                        autoComplete="off"
+                        {...field}
+                        onChange={(e) => field.onChange(toTitleCase(e.target.value, true))}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -489,7 +515,7 @@ export function VisitsPage() {
                         value={field.value ?? ''}
                         onChange={field.onChange}
                         options={empreiteiras.filter((e) => e.active).map((e) => e.razao_social)}
-                        placeholder="Empresa do não credenciado"
+                        placeholder="Nome da empresa"
                       />
                     </FormControl>
                     <FormMessage />
